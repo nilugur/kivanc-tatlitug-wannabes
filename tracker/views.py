@@ -3,11 +3,11 @@ from django.shortcuts import redirect
 # redirect(), HttpResponseRedirect + reverse()'ün yaptığı işi
 # tek bir fonksiyonda birleştiren bir kısayol.
 from django.contrib.auth.forms import UserCreationForm
-from .forms import ClientProfileForm, DietitianProfileForm, MealForm, MealItemForm
+from .forms import ClientProfileForm, DietitianProfileForm, MealForm, MealItemForm, ExerciseLogForm
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
-from .models import Meal
+from .models import Meal, ClientProfile, DietitianProfile
 
 
 def index(request):
@@ -104,3 +104,49 @@ def add_meal_item(request, meal_id):
         meal_item_form = MealItemForm()
 
     return render(request, "tracker/add_meal_item.html", {"meal_item_form": meal_item_form, "meal": meal})
+
+
+@login_required
+def add_exercise(request):
+    if request.method == "POST":
+        exercise_log_form = ExerciseLogForm(request.POST)
+        if exercise_log_form.is_valid():
+            new_exercise = exercise_log_form.save(commit=False)
+            new_exercise.user = request.user
+            new_exercise.save()
+            return redirect("tracker:add_exercise")
+
+    else:
+        exercise_log_form = ExerciseLogForm()
+
+    return render(request, "tracker/add_exercise.html", {"exercise_log_form": exercise_log_form})
+
+
+@login_required
+def profile(request):
+    try:
+        profile = ClientProfile.objects.get(user=request.user)
+        profile_form = ClientProfileForm
+        profile_template = "tracker/profile_client.html"
+
+    except ClientProfile.DoesNotExist:
+        profile = DietitianProfile.objects.get(user=request.user)
+        profile_form = DietitianProfileForm
+        profile_template = "tracker/profile_dietitian.html"
+
+    if request.method == "POST":
+        # instance=profile diyerek Django'ya "yeni bir kayıt oluşturma,
+        # kullanıcının zaten var olan profilini güncelle" diyoruz.
+        # instance= olmasaydı, her kaydette veritabanına ikinci bir
+        # ClientProfile/DietitianProfile satırı daha eklenirdi.
+        form = profile_form(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            return redirect("tracker:profile")
+
+    else:
+        # Formu boş değil, kullanıcının mevcut bilgileriyle
+        # (instance=profile) doldurarak gösteriyoruz.
+        form = profile_form(instance=profile)
+
+    return render(request, profile_template, {"profile_form": form})

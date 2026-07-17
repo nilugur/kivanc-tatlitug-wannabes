@@ -1,0 +1,7 @@
+<h2>ADD EXERCISE</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ exercise_log_form.as_p }}
+    <button type="submit">Add</button>
+</form>
+<a href="{% url 'tracker:index' %}">Done</a>

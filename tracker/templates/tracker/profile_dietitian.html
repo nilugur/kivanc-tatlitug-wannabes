@@ -1,0 +1,6 @@
+<h2> PROFILE </h2>
+<form method="post">
+    {% csrf_token %}
+    {{ profile_form.as_p }}
+    <button type="submit">Update</button>
+</form>
