@@ -1,0 +1,9 @@
+<h2>LOG IN</h2>
+<form method="post">
+    {% csrf_token %}
+    <!-- form.as_p, Django'nun otomatik oluşturduğu form nesnesindeki
+     tüm alanları (username, password) hazır HTML input kutularına
+     çevirir; kutuları elle yazmamıza gerek kalmaz. -->
+    {{ form.as_p }}
+    <button type="submit">Log in</button>
+</form>

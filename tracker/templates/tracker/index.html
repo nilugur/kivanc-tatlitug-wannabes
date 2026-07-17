@@ -1,0 +1,11 @@
+<h1>Kıvanç Tatlıtuğ Wannabes - Ana Sayfa</h1>
+{% if user.is_authenticated %}
+    <p>Welcome, {{ user.username }}!</p>
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+</form>
+{% else %}
+    <a href="{% url 'login' %}">Login</a>
+    <a href="{% url 'tracker:register_choice' %}">Register</a>
+{% endif %}

@@ -1,0 +1,6 @@
+<h2>WHICH MEAL</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ meal_form.as_p }}
+    <button type="submit">Submit</button>
+</form>

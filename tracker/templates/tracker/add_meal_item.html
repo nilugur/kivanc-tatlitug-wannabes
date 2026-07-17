@@ -1,0 +1,8 @@
+<h2>ADD MEAL ITEM</h2>
+<p>{{ meal }}</p>
+<form method="post">
+    {% csrf_token %}
+    {{ meal_item_form.as_p }}
+    <button type="submit">Add</button>
+</form>
+<a href="{% url 'tracker:index' %}">Done</a>
