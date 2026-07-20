@@ -1,0 +1,221 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #FFF7F5;
+    font-family: 'Inter', sans-serif;
+    color: #241E28;
+}
+
+.dash-wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+}
+
+.dash-eyebrow {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #E8447A;
+    margin: 0 0 4px;
+}
+
+.dash-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 44px;
+    letter-spacing: 0.02em;
+    margin: 0 0 28px;
+    line-height: 1;
+}
+
+.action-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.action-btn {
+    flex: 1;
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    background: #241E28;
+    color: #FFF7F5;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.action-btn:hover {
+    background: #E8447A;
+    transform: translateY(-2px);
+}
+
+.card {
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(36, 30, 40, 0.06);
+}
+
+.date-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.date-form input[type="date"] {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #EBDEE3;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #241E28;
+    background: #FFF7F5;
+}
+
+.date-form button {
+    background: #FFC93C;
+    color: #241E28;
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.date-form button:hover {
+    transform: translateY(-1px);
+}
+
+.stat-grid {
+    display: flex;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.stat-box {
+    flex: 1;
+    background: #FFF7F5;
+    border-radius: 14px;
+    padding: 18px 16px;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #8A7E88;
+    margin: 0 0 6px;
+}
+
+.stat-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    line-height: 1;
+    margin: 0;
+}
+
+.stat-number.consumed {
+    color: #E8447A;
+}
+
+.stat-number.burned {
+    color: #2AA876;
+}
+
+.stat-unit {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #8A7E88;
+}
+
+.footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.profile-link {
+    color: #241E28;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    border-bottom: 2px solid #FFC93C;
+    padding-bottom: 2px;
+}
+
+.logout-form button {
+    background: none;
+    border: 1px solid #EBDEE3;
+    color: #8A7E88;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.logout-form button:hover {
+    border-color: #E8447A;
+    color: #E8447A;
+}
+</style>
+
+<div class="dash-wrap">
+    <p class="dash-eyebrow">WELCOME</p>
+    <h1 class="dash-title">{{ user.username }}</h1>
+
+    <div class="action-row">
+        <a class="action-btn" href="{% url 'tracker:add_meal' %}">+ Add Meal</a>
+        <a class="action-btn" href="{% url 'tracker:add_exercise' %}">+ Add Exercise</a>
+    </div>
+
+    <div class="card">
+        <form class="date-form" method="get">
+            <input type="date" name="date" value="{{ selected_date }}">
+            <button type="submit">Show</button>
+        </form>
+
+        <div class="stat-grid">
+            <div class="stat-box">
+                <p class="stat-label">Consumed</p>
+                <p class="stat-number consumed">{{ calories_consumed }}</p>
+                <span class="stat-unit">kcal</span>
+            </div>
+            <div class="stat-box">
+                <p class="stat-label">Burned</p>
+                <p class="stat-number burned">{{ calories_burned }}</p>
+                <span class="stat-unit">kcal</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-row">
+        <a class="profile-link" href="{% url 'tracker:profile' %}">Profile</a>
+        <form class="logout-form" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+</div>

@@ -1,5 +1,104 @@
-<h2> What role are you signing up for? </h2>
-<ul>
-    <li><a href="{% url 'tracker:register_client' %}">Client</a></li>
-    <li><a href="{% url 'tracker:register_dietitian' %}">Dietitian</a></li>
-</ul>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #FFF7F5;
+    font-family: 'Inter', sans-serif;
+    color: #241E28;
+}
+
+.page-wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 60px 20px 60px;
+    text-align: center;
+}
+
+.page-eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #E8447A;
+    margin: 0 0 8px;
+}
+
+.page-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 0.01em;
+    margin: 0 0 32px;
+    line-height: 1.1;
+}
+
+.role-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.role-card {
+    display: block;
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 22px 20px;
+    text-decoration: none;
+    color: #241E28;
+    box-shadow: 0 4px 16px rgba(36, 30, 40, 0.06);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.role-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(36, 30, 40, 0.10);
+}
+
+.role-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 0.02em;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.role-card.client .role-name {
+    color: #E8447A;
+}
+
+.role-card.dietitian .role-name {
+    color: #2AA876;
+}
+
+.role-desc {
+    font-size: 13px;
+    color: #8A7E88;
+}
+</style>
+
+<div class="page-wrap">
+    <p class="page-eyebrow">Register</p>
+    <h2 class="page-title">WHAT ROLE ARE YOU SIGNING UP FOR?</h2>
+
+    <ul class="role-list">
+        <li>
+            <a class="role-card client" href="{% url 'register_client' %}">
+                <span class="role-name">CLIENT</span>
+                <span class="role-desc">Track your meals, workouts, and calories</span>
+            </a>
+        </li>
+        <li>
+            <a class="role-card dietitian" href="{% url 'register_dietitian' %}">
+                <span class="role-name">DIETITIAN</span>
+                <span class="role-desc">Manage and monitor your clients</span>
+            </a>
+        </li>
+    </ul>
+</div>

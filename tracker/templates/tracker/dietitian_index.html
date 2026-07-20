@@ -1,0 +1,156 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #FFF7F5;
+    font-family: 'Inter', sans-serif;
+    color: #241E28;
+}
+
+.dash-wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+}
+
+.dash-eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #E8447A;
+    margin: 0 0 4px;
+}
+
+.dash-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 44px;
+    letter-spacing: 0.02em;
+    margin: 0 0 28px;
+    line-height: 1;
+}
+
+.card {
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(36, 30, 40, 0.06);
+}
+
+.card-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8A7E88;
+    margin: 0 0 16px;
+}
+
+.client-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.client-list li {
+    margin: 0;
+}
+
+.client-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FFF7F5;
+    border-radius: 12px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: #241E28;
+    font-weight: 600;
+    font-size: 15px;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.client-row:hover {
+    background: #FFE3EC;
+    transform: translateX(2px);
+}
+
+.client-row::after {
+    content: "→";
+    color: #E8447A;
+    font-weight: 700;
+}
+
+.empty-state {
+    color: #8A7E88;
+    font-size: 14px;
+    margin: 0;
+}
+
+.footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.profile-link {
+    color: #241E28;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    border-bottom: 2px solid #FFC93C;
+    padding-bottom: 2px;
+}
+
+.logout-form button {
+    background: none;
+    border: 1px solid #EBDEE3;
+    color: #8A7E88;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.logout-form button:hover {
+    border-color: #E8447A;
+    color: #E8447A;
+}
+</style>
+
+<div class="dash-wrap">
+    <p class="dash-eyebrow">WELCOME</p>
+    <h1 class="dash-title">{{ user.username }}</h1>
+
+    <div class="card">
+        <p class="card-label">Clients</p>
+        <ul class="client-list">
+            {% for client in clients %}
+            <li><a class="client-row" href="{% url 'tracker:client_detail' client_id=client.id %}">{{ client }}</a></li>
+            {% empty %}
+            <p class="empty-state">You don't have any clients yet.</p>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="footer-row">
+        <a class="profile-link" href="{% url 'tracker:profile' %}">Profile</a>
+        <form class="logout-form" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+</div>

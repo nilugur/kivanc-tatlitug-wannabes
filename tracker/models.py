@@ -72,7 +72,7 @@ class Meal(models.Model):
 
     def __str__(self):
         local_date = timezone.localtime(self.date)
-        return f"{self.user.username} - {self.get_meal_type_display()} - {local_date}"
+        return f"{self.user.username} - {self.get_meal_type_display()} - {local_date.strftime('%d %b %H:%M')}"
 
 
 class Exercise(models.Model):

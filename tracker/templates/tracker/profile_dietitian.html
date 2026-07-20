@@ -1,6 +1,110 @@
-<h2> PROFILE </h2>
-<form method="post">
-    {% csrf_token %}
-    {{ profile_form.as_p }}
-    <button type="submit">Update</button>
-</form>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #FFF7F5;
+    font-family: 'Inter', sans-serif;
+    color: #241E28;
+}
+
+.page-wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+}
+
+.page-eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #E8447A;
+    margin: 0 0 4px;
+}
+
+.page-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    letter-spacing: 0.02em;
+    margin: 0 0 24px;
+    line-height: 1;
+}
+
+.card {
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(36, 30, 40, 0.06);
+}
+
+.card form p {
+    margin: 0 0 16px;
+}
+
+.card form label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #8A7E88;
+    margin-bottom: 6px;
+}
+
+.card form select,
+.card form input[type="number"],
+.card form input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #EBDEE3;
+    background: #FFF7F5;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: #241E28;
+}
+
+.card form select:focus,
+.card form input:focus {
+    outline: none;
+    border-color: #E8447A;
+}
+
+.submit-btn {
+    width: 100%;
+    background: #E8447A;
+    color: #FFFFFF;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.submit-btn:hover {
+    background: #c9366a;
+    transform: translateY(-2px);
+}
+</style>
+
+<div class="page-wrap">
+    <p class="page-eyebrow">Your details</p>
+    <h2 class="page-title">PROFILE</h2>
+
+    <div class="card">
+        <form method="post">
+            {% csrf_token %}
+            {{ profile_form.as_p }}
+            <button class="submit-btn" type="submit">Update</button>
+        </form>
+    </div>
+</div>

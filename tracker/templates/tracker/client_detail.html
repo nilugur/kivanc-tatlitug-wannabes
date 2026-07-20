@@ -1,0 +1,228 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #FFF7F5;
+    font-family: 'Inter', sans-serif;
+    color: #241E28;
+}
+
+.page-wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+}
+
+.page-eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #E8447A;
+    margin: 0 0 4px;
+}
+
+.page-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 44px;
+    letter-spacing: 0.02em;
+    margin: 0 0 24px;
+    line-height: 1;
+}
+
+.card {
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(36, 30, 40, 0.06);
+}
+
+.card-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8A7E88;
+    margin: 0 0 16px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.info-item {
+    background: #FFF7F5;
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.info-item .k {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #8A7E88;
+    margin-bottom: 4px;
+}
+
+.info-item .v {
+    font-size: 16px;
+    font-weight: 600;
+    color: #241E28;
+}
+
+.date-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.date-form input[type="date"] {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #EBDEE3;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #241E28;
+    background: #FFF7F5;
+}
+
+.date-form button {
+    background: #FFC93C;
+    color: #241E28;
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.date-form button:hover {
+    transform: translateY(-1px);
+}
+
+.stat-grid {
+    display: flex;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.stat-box {
+    flex: 1;
+    background: #FFF7F5;
+    border-radius: 14px;
+    padding: 18px 16px;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #8A7E88;
+    margin: 0 0 6px;
+}
+
+.stat-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    line-height: 1;
+    margin: 0;
+}
+
+.stat-number.consumed {
+    color: #E8447A;
+}
+
+.stat-number.burned {
+    color: #2AA876;
+}
+
+.stat-unit {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #8A7E88;
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 8px;
+    color: #241E28;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    border-bottom: 2px solid #FFC93C;
+    padding-bottom: 2px;
+}
+</style>
+
+<div class="page-wrap">
+    <p class="page-eyebrow">Client Detail</p>
+    <h1 class="page-title">{{ client.user.username }}</h1>
+
+    <div class="card">
+        <p class="card-label">Profile</p>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="k">Age</span>
+                <span class="v">{{ client.age }}</span>
+            </div>
+            <div class="info-item">
+                <span class="k">Gender</span>
+                <span class="v">{{ client.get_gender_display }}</span>
+            </div>
+            <div class="info-item">
+                <span class="k">Weight</span>
+                <span class="v">{{ client.weight_kg }} kg</span>
+            </div>
+            <div class="info-item">
+                <span class="k">Height</span>
+                <span class="v">{{ client.height_cm }} cm</span>
+            </div>
+            <div class="info-item">
+                <span class="k">Goal</span>
+                <span class="v">{{ client.get_goal_display }}</span>
+            </div>
+            <div class="info-item">
+                <span class="k">Activity level</span>
+                <span class="v">{{ client.get_activity_level_display }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <form class="date-form" method="get">
+            <input type="date" name="date" value="{{ selected_date }}">
+            <button type="submit">Show</button>
+        </form>
+
+        <div class="stat-grid">
+            <div class="stat-box">
+                <p class="stat-label">Consumed</p>
+                <p class="stat-number consumed">{{ calories_consumed }}</p>
+                <span class="stat-unit">kcal</span>
+            </div>
+            <div class="stat-box">
+                <p class="stat-label">Burned</p>
+                <p class="stat-number burned">{{ calories_burned }}</p>
+                <span class="stat-unit">kcal</span>
+            </div>
+        </div>
+    </div>
+
+    <a class="back-link" href="{% url 'tracker:index' %}">Back to Dashboard</a>
+</div>

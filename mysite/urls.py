@@ -16,9 +16,21 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic.base import RedirectView
+from tracker import views
 
 urlpatterns = [
+    # Kök URL'e (localhost:8000/) gelen ziyaretçiyi otomatik olarak
+    # /tracker/'a yönlendiriyoruz. RedirectView, Django'nun hazır
+    # sunduğu bir "sınıf tabanlı view" — kendi view fonksiyonumuzu
+    # yazmamıza gerek kalmadan, sadece "nereye" (pattern_name) diyerek
+    # yönlendirme yapmamızı sağlıyor. .as_view() ise bu sınıfı, path()'in
+    # beklediği çağrılabilir bir fonksiyona çeviriyor.
+    path('', RedirectView.as_view(pattern_name="tracker:index")),
     path('admin/', admin.site.urls),
     path('tracker/', include('tracker.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('accounts/register/', views.register_choice, name="register_choice"),
+    path('accounts/register/clients/', views.register_client, name="register_client"),
+    path('accounts/register/dietitian/', views.register_dietitian, name="register_dietitian"),
     ]

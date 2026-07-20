@@ -7,11 +7,69 @@ from .forms import ClientProfileForm, DietitianProfileForm, MealForm, MealItemFo
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
-from .models import Meal, ClientProfile, DietitianProfile
+from .models import Meal, ClientProfile, DietitianProfile, ExerciseLog
+from django.utils import timezone
+from datetime import datetime
+
+
+def calculate_calories_consumed(user, date):
+    total = 0
+    meals = Meal.objects.filter(user=user, date__date=date)
+    for meal in meals:
+        for meal_item in meal.mealitem_set.all():
+            if meal_item.food:
+                total += (meal_item.quantity_g / 100) * meal_item.food.calorie_per_100g
+
+    return total
+
+
+def calculate_calories_burned(user, date):
+    total = 0
+    exercise_logs = ExerciseLog.objects.filter(user=user, date__date=date)
+    for log in exercise_logs:
+        if log.exercise:
+            total += (log.duration_minutes / 60) * log.exercise.calories_per_hour
+
+    return total
 
 
 def index(request):
-    return render(request, "tracker/index.html", {})
+    if request.user.is_authenticated:
+        try:
+            profile = ClientProfile.objects.get(user=request.user)
+            index_template = "tracker/client_index.html"
+            # request.GET, URL'in sonundaki ?date=... gibi parametreleri
+            # tutan bir sözlük. .get("date") ile "date" anahtarını arıyoruz;
+            # .get() kullanıyoruz çünkü kullanıcı hiç tarih seçmediyse
+            # (URL'de ?date=... yoksa) hata vermek yerine None döndürür.
+            date_param = request.GET.get("date")
+            if date_param:
+                # request.GET'ten gelen değer her zaman bir string'dir
+                # (örn. "2026-07-16"), bir tarih nesnesi değil.
+                # strptime bu string'i "%Y-%m-%d" kalıbına göre
+                # (yıl-ay-gün) okuyup bir datetime nesnesine çeviriyor.
+                # Sonundaki .date() ise saat kısmını atıp sadece tarihi alıyor
+                # çünkü filter(date__date=...) sadece tarih (saatsiz) bekliyor.
+                selected_date = datetime.strptime(date_param, "%Y-%m-%d").date()
+            else:
+                # Kullanıcı hiç tarih seçmediyse, varsayılan olarak bugünü göster
+                selected_date = timezone.now().date()
+
+            consumed = calculate_calories_consumed(request.user, selected_date)
+            burned = calculate_calories_burned(request.user, selected_date)
+            context = {"calories_consumed": consumed,
+                       "calories_burned": burned,
+                       "selected_date": selected_date
+                       }
+        except ClientProfile.DoesNotExist:
+            profile = DietitianProfile.objects.get(user=request.user)
+            clients = ClientProfile.objects.filter(dietitian=profile)
+            index_template = "tracker/dietitian_index.html"
+            context = {"clients": clients}
+
+        return render(request, index_template, context)
+    else:
+        return render(request, "tracker/index.html", {})
 
 
 def register_client(request):
@@ -103,7 +161,11 @@ def add_meal_item(request, meal_id):
     else:
         meal_item_form = MealItemForm()
 
-    return render(request, "tracker/add_meal_item.html", {"meal_item_form": meal_item_form, "meal": meal})
+    return render(
+        request,
+        "tracker/add_meal_item.html", 
+        {"meal_item_form": meal_item_form, "meal": meal}
+        )
 
 
 @login_required
@@ -119,7 +181,11 @@ def add_exercise(request):
     else:
         exercise_log_form = ExerciseLogForm()
 
-    return render(request, "tracker/add_exercise.html", {"exercise_log_form": exercise_log_form})
+    return render(
+        request,
+        "tracker/add_exercise.html",
+        {"exercise_log_form": exercise_log_form}
+        )
 
 
 @login_required
@@ -150,3 +216,25 @@ def profile(request):
         form = profile_form(instance=profile)
 
     return render(request, profile_template, {"profile_form": form})
+
+
+@login_required
+def client_detail(request, client_id):
+    client = get_object_or_404(ClientProfile, pk=client_id)
+    date_param = request.GET.get("date")
+    if date_param:
+        selected_date = datetime.strptime(date_param, "%Y-%m-%d").date()
+    else:
+        selected_date = timezone.now().date()
+
+    consumed = calculate_calories_consumed(client.user, selected_date)
+    burned = calculate_calories_burned(client.user, selected_date)
+
+    return render(
+        request, 
+        "tracker/client_detail.html",
+        {"client": client,
+         "calories_consumed": consumed,
+         "calories_burned": burned,
+         "selected_date": selected_date}
+        )

@@ -1,11 +1,140 @@
-<h1>Kıvanç Tatlıtuğ Wannabes - Ana Sayfa</h1>
-{% if user.is_authenticated %}
-    <p>Welcome, {{ user.username }}!</p>
-    <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Logout</button>
-</form>
-{% else %}
-    <a href="{% url 'login' %}">Login</a>
-    <a href="{% url 'tracker:register_choice' %}">Register</a>
-{% endif %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #FFF7F5;
+    font-family: 'Inter', sans-serif;
+    color: #241E28;
+}
+
+.hero-wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 80px 20px 60px;
+    text-align: center;
+}
+
+.hero-eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #E8447A;
+    margin: 0 0 10px;
+}
+
+.hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    line-height: 1.02;
+    letter-spacing: 0.01em;
+    margin: 0 0 16px;
+}
+
+.hero-title span {
+    color: #E8447A;
+}
+
+.hero-sub {
+    font-size: 16px;
+    color: #8A7E88;
+    line-height: 1.5;
+    margin: 0 0 36px;
+}
+
+.welcome-card {
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 4px 16px rgba(36, 30, 40, 0.06);
+}
+
+.welcome-card p {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 18px;
+}
+
+.logout-form button {
+    background: none;
+    border: 1px solid #EBDEE3;
+    color: #8A7E88;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.logout-form button:hover {
+    border-color: #E8447A;
+    color: #E8447A;
+}
+
+.cta-row {
+    display: flex;
+    gap: 12px;
+}
+
+.cta-btn {
+    flex: 1;
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 15px 16px;
+    border-radius: 12px;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.cta-btn.primary {
+    background: #241E28;
+    color: #FFF7F5;
+}
+
+.cta-btn.primary:hover {
+    background: #E8447A;
+    transform: translateY(-2px);
+}
+
+.cta-btn.secondary {
+    background: #FFF7F5;
+    color: #241E28;
+    border: 1px solid #EBDEE3;
+}
+
+.cta-btn.secondary:hover {
+    border-color: #E8447A;
+    color: #E8447A;
+    transform: translateY(-2px);
+}
+</style>
+
+<div class="hero-wrap">
+    <p class="hero-eyebrow">Calorie & fitness tracking</p>
+    <h1 class="hero-title">Kıvanç Tatlıtuğ<br><span>Wannabes</span></h1>
+
+    {% if user.is_authenticated %}
+    <div class="welcome-card">
+        <p>Welcome, {{ user.username }}!</p>
+        <form class="logout-form" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+    {% else %}
+    <p class="hero-sub">Log your meals and workouts, and keep track of your daily calorie balance.</p>
+    <div class="cta-row">
+        <a class="cta-btn primary" href="{% url 'login' %}">Login</a>
+        <a class="cta-btn secondary" href="{% url 'register_choice' %}">Register</a>
+    </div>
+    {% endif %}
+</div>
