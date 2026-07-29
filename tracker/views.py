@@ -327,6 +327,8 @@ def search_food(request):
     # kutusuna yazdığı kelimeyi buradan okuyoruz .get() kullanıyoruz
     # çünkü query hiç gönderilmemişse hata vermek yerine None döner.
     query = request.GET.get("query")
+    if not query:
+        return JsonResponse({"results": []})
     # icontains: food_name alanında, aranan kelimeyi İÇEREN (tam eşleşme
     # değil) kayıtları, büyük/küçük harf FARKETMEDEN bulur
     # Önce kendi veritabanımızda arıyoruz, USDA API'sine sadece
@@ -339,7 +341,7 @@ def search_food(request):
     if not food_list:
         response = requests.get("https://api.nal.usda.gov/fdc/v1/foods/search", params={"query": query, "api_key": settings.USDA_API_KEY})
         data = response.json()
-        results = data["foods"]
+        results = data.get("foods", [])
         for food in results:
             for nutrient in food["foodNutrients"]:
                 if nutrient["nutrientName"] == "Energy":
@@ -362,6 +364,8 @@ def create_food_from_usda(request):
 @login_required
 def search_exercise(request):
     query = request.GET.get("query")
+    if not query:
+        return JsonResponse({"results": []})
     results = Exercise.objects.filter(exercise_name__icontains=query)
     exercise_list = []
     for exercise in results:
