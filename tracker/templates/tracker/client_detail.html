@@ -158,6 +158,89 @@ body {
     color: #8A7E88;
 }
 
+.log-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+}
+
+@media (max-width: 560px) {
+    .log-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.log-column-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.04em;
+    margin: 0 0 10px;
+    color: #E8447A;
+}
+
+.log-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.log-item {
+    background: #FFF7F5;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+.log-item .food-name {
+    display: block;
+    font-weight: 600;
+    color: #241E28;
+}
+
+.log-item .food-qty {
+    display: block;
+    font-size: 11px;
+    color: #8A7E88;
+}
+
+.log-empty {
+    font-size: 12px;
+    color: #8A7E88;
+    list-style: none;
+}
+
+.exercise-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.exercise-item {
+    background: #FFF7F5;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+}
+
+.exercise-item .exercise-name {
+    display: block;
+    font-weight: 600;
+    color: #241E28;
+}
+
+.exercise-item .exercise-duration {
+    display: block;
+    font-size: 12px;
+    color: #8A7E88;
+}
+
 .back-link {
     display: inline-block;
     margin-top: 8px;
@@ -206,7 +289,7 @@ body {
 
     <div class="card">
         <form class="date-form" method="get">
-            <input type="date" name="date" value="{{ selected_date }}">
+            <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
             <button type="submit">Show</button>
         </form>
 
@@ -222,6 +305,78 @@ body {
                 <span class="stat-unit">kcal</span>
             </div>
         </div>
+    </div>
+
+    <div class="card">
+        <p class="card-label">Meals</p>
+        <div class="log-grid">
+            <div>
+                <h3 class="log-column-title">Breakfast</h3>
+                <ul class="log-items">
+                    {% for item in breakfast %}
+                    <li class="log-item">
+                        <span class="food-name">{% if item.food %}{{ item.food.food_name }}{% else %}Deleted Food{% endif %}</span>
+                        <span class="food-qty">{{ item.quantity_g }} g</span>
+                    </li>
+                    {% empty %}
+                    <li class="log-empty">Nothing logged.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div>
+                <h3 class="log-column-title">Lunch</h3>
+                <ul class="log-items">
+                    {% for item in lunch %}
+                    <li class="log-item">
+                        <span class="food-name">{% if item.food %}{{ item.food.food_name }}{% else %}Deleted Food{% endif %}</span>
+                        <span class="food-qty">{{ item.quantity_g }} g</span>
+                    </li>
+                    {% empty %}
+                    <li class="log-empty">Nothing logged.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div>
+                <h3 class="log-column-title">Dinner</h3>
+                <ul class="log-items">
+                    {% for item in dinner %}
+                    <li class="log-item">
+                        <span class="food-name">{% if item.food %}{{ item.food.food_name }}{% else %}Deleted Food{% endif %}</span>
+                        <span class="food-qty">{{ item.quantity_g }} g</span>
+                    </li>
+                    {% empty %}
+                    <li class="log-empty">Nothing logged.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div>
+                <h3 class="log-column-title">Snack</h3>
+                <ul class="log-items">
+                    {% for item in snack %}
+                    <li class="log-item">
+                        <span class="food-name">{% if item.food %}{{ item.food.food_name }}{% else %}Deleted Food{% endif %}</span>
+                        <span class="food-qty">{{ item.quantity_g }} g</span>
+                    </li>
+                    {% empty %}
+                    <li class="log-empty">Nothing logged.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <p class="card-label">Exercise</p>
+        <ul class="exercise-list">
+            {% for log in exercises %}
+            <li class="exercise-item">
+                <span class="exercise-name">{% if log.exercise %}{{ log.exercise.exercise_name }}{% else %}Deleted Exercise{% endif %}</span>
+                <span class="exercise-duration">{{ log.duration_minutes }} min</span>
+            </li>
+            {% empty %}
+            <li class="log-empty">Nothing logged.</li>
+            {% endfor %}
+        </ul>
     </div>
 
     <a class="back-link" href="{% url 'tracker:index' %}">Back to Dashboard</a>

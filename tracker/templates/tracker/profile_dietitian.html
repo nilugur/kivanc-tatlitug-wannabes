@@ -94,6 +94,17 @@ body {
     background: #c9366a;
     transform: translateY(-2px);
 }
+
+.back-link {
+    display: inline-block;
+    color: #241E28;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    border-bottom: 2px solid #FFC93C;
+    padding-bottom: 2px;
+}
+
 </style>
 
 <div class="page-wrap">
@@ -107,4 +118,5 @@ body {
             <button class="submit-btn" type="submit">Update</button>
         </form>
     </div>
+    <a class="back-link" href="{% url 'tracker:index' %}">Back to Dashboard</a>
 </div>

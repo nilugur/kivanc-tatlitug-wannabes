@@ -1,15 +1,19 @@
 from django.shortcuts import render
-from django.shortcuts import redirect 
+from django.shortcuts import redirect
 # redirect(), HttpResponseRedirect + reverse()'ün yaptığı işi
 # tek bir fonksiyonda birleştiren bir kısayol.
 from django.contrib.auth.forms import UserCreationForm
-from .forms import ClientProfileForm, DietitianProfileForm, MealForm, MealItemForm, ExerciseLogForm
+from .forms import ClientProfileForm, DietitianProfileForm, MealItemForm, ExerciseLogForm
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
-from .models import Meal, ClientProfile, DietitianProfile, ExerciseLog
+from .models import Meal, ClientProfile, DietitianProfile, ExerciseLog, MealItem, Food, Exercise
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, timedelta
+from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse
+import requests
+from django.conf import settings
 
 
 def calculate_calories_consumed(user, date):
@@ -29,6 +33,28 @@ def calculate_calories_burned(user, date):
     for log in exercise_logs:
         if log.exercise:
             total += (log.duration_minutes / 60) * log.exercise.calories_per_hour
+
+    return total
+
+
+def calculate_weekly_calories_consumed(user, date):
+    week_ago = date - timedelta(days=7)
+    weekly_data = MealItem.objects.filter(meal__user=user, meal__date__date__gte=week_ago,  meal__date__date__lte=date)
+    total = 0
+    for items in weekly_data:
+        if items.food:
+            total += (items.quantity_g / 100) * items.food.calorie_per_100g
+
+    return total
+
+
+def calculate_weekly_calories_burned(user, date):
+    week_ago = date - timedelta(days=7)
+    weekly_data = ExerciseLog.objects.filter(user=user, date__date__gte=week_ago, date__date__lte=date)
+    total = 0
+    for items in weekly_data:
+        if items.exercise:
+            total += (items.duration_minutes / 60) * items.exercise.calories_per_hour
 
     return total
 
@@ -57,9 +83,24 @@ def index(request):
 
             consumed = calculate_calories_consumed(request.user, selected_date)
             burned = calculate_calories_burned(request.user, selected_date)
+            breakfast = MealItem.objects.filter(meal__user=request.user, meal__meal_type="B", meal__date__date=selected_date)
+            lunch = MealItem.objects.filter(meal__user=request.user, meal__meal_type="L", meal__date__date=selected_date)
+            dinner = MealItem.objects.filter(meal__user=request.user, meal__meal_type="D", meal__date__date=selected_date)
+            snack = MealItem.objects.filter(meal__user=request.user, meal__meal_type="S", meal__date__date=selected_date)
+            exercises = ExerciseLog.objects.filter(user=request.user, date__date=selected_date)
+            weekly_consumed = calculate_weekly_calories_consumed(request.user, selected_date)
+            weekly_burned = calculate_weekly_calories_burned(request.user, selected_date)
+
             context = {"calories_consumed": consumed,
                        "calories_burned": burned,
-                       "selected_date": selected_date
+                       "selected_date": selected_date,
+                       "breakfast": breakfast,
+                       "lunch": lunch,
+                       "dinner": dinner,
+                       "snack": snack,
+                       "exercises": exercises,
+                       "weekly_consumed": weekly_consumed,
+                       "weekly_burned": weekly_burned
                        }
         except ClientProfile.DoesNotExist:
             profile = DietitianProfile.objects.get(user=request.user)
@@ -132,24 +173,9 @@ def register_choice(request):
 
 
 @login_required
-def add_meal(request):
-    if request.method == "POST":
-        meal_form = MealForm(request.POST)
-        if meal_form.is_valid():
-            new_meal = meal_form.save(commit=False)
-            new_meal.user = request.user
-            new_meal.save()
-            return redirect("tracker:add_meal_item", meal_id=new_meal.id)
-
-    else:
-        meal_form = MealForm()
-
-    return render(request, "tracker/add_meal.html", {"meal_form": meal_form})
-
-
-@login_required
 def add_meal_item(request, meal_id):
     meal = get_object_or_404(Meal, pk=meal_id)
+    items = meal.mealitem_set.all()
     if request.method == "POST":
         meal_item_form = MealItemForm(request.POST)
         if meal_item_form.is_valid():
@@ -164,7 +190,7 @@ def add_meal_item(request, meal_id):
     return render(
         request,
         "tracker/add_meal_item.html", 
-        {"meal_item_form": meal_item_form, "meal": meal}
+        {"meal_item_form": meal_item_form, "meal": meal, "items": items}
         )
 
 
@@ -181,10 +207,13 @@ def add_exercise(request):
     else:
         exercise_log_form = ExerciseLogForm()
 
+    today = timezone.now().date()
+    today_exercises = ExerciseLog.objects.filter(user=request.user, date__date=today)
+
     return render(
         request,
         "tracker/add_exercise.html",
-        {"exercise_log_form": exercise_log_form}
+        {"exercise_log_form": exercise_log_form, "today_exercises": today_exercises}
         )
 
 
@@ -221,6 +250,15 @@ def profile(request):
 @login_required
 def client_detail(request, client_id):
     client = get_object_or_404(ClientProfile, pk=client_id)
+    try:
+        profile = DietitianProfile.objects.get(user=request.user)
+
+    except DietitianProfile.DoesNotExist:
+        raise PermissionDenied
+
+    if profile != client.dietitian:
+        raise PermissionDenied
+
     date_param = request.GET.get("date")
     if date_param:
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date()
@@ -229,12 +267,125 @@ def client_detail(request, client_id):
 
     consumed = calculate_calories_consumed(client.user, selected_date)
     burned = calculate_calories_burned(client.user, selected_date)
+    breakfast = MealItem.objects.filter(meal__user=client.user, meal__meal_type="B", meal__date__date=selected_date)
+    lunch = MealItem.objects.filter(meal__user=client.user, meal__meal_type="L", meal__date__date=selected_date)
+    dinner = MealItem.objects.filter(meal__user=client.user, meal__meal_type="D", meal__date__date=selected_date)
+    snack = MealItem.objects.filter(meal__user=client.user, meal__meal_type="S", meal__date__date=selected_date)
+    exercises = ExerciseLog.objects.filter(user=client.user, date__date=selected_date)
 
     return render(
-        request, 
+        request,
         "tracker/client_detail.html",
         {"client": client,
          "calories_consumed": consumed,
          "calories_burned": burned,
-         "selected_date": selected_date}
+         "selected_date": selected_date,
+         "breakfast": breakfast,
+         "lunch": lunch,
+         "dinner": dinner,
+         "snack": snack,
+         "exercises": exercises}
         )
+
+
+@login_required
+def meal_log(request):
+    selected_date = timezone.now().date()
+    breakfast_items = MealItem.objects.filter(meal__user=request.user, meal__meal_type="B", meal__date__date=selected_date)
+    lunch_items = MealItem.objects.filter(meal__user=request.user, meal__meal_type="L", meal__date__date=selected_date)
+    dinner_items = MealItem.objects.filter(meal__user=request.user, meal__meal_type="D", meal__date__date=selected_date)
+    snack_items = MealItem.objects.filter(meal__user=request.user, meal__meal_type="S", meal__date__date=selected_date)
+    foods = Food.objects.all()
+    return render(
+        request,
+        "tracker/meal_log.html",
+        {"breakfast_items": breakfast_items, "lunch_items": lunch_items, "dinner_items": dinner_items, "snack_items": snack_items, "foods": foods}
+        )
+
+
+@login_required
+def meal_log_add(request, meal_type):
+    selected_date = timezone.now().date()
+    # get_or_create: bugün, bu kullanıcı için, bu meal_type'ta zaten bir
+    # Meal var mı diye bakar. Varsa onu getirir yoksa yeni bir tane
+    # oluşturur. Bunu kullanmasaydık kullanıcı aynı öğüne (örn. Lunch)
+    # birden fazla kez "+ Add" dediğinde her seferinde yeni, tekrarlayan
+    # bir Meal kaydı oluşurdu.
+    # İki değişkene atama yapıyoruz çünkü get_or_create her zaman iki
+    # değer döndürür: bulunan/oluşturulan nesnenin kendisi (meal) ve
+    # bu nesnenin yeni mi oluşturulduğunu yoksa zaten var mı olduğunu
+    # söyleyen bir True/False değeri (created). Biz created'i şu an
+    # kullanmıyoruz ama Python'a iki değişkenle karşılamamız gerekiyor.
+    meal, created = Meal.objects.get_or_create(user=request.user, meal_type=meal_type, date=selected_date)
+    return redirect("tracker:add_meal_item", meal_id=meal.id)
+
+
+@login_required
+def search_food(request):
+    # request.GET, URL'in ?query=... kısmındaki veriyi taşır
+    # JavaScript tarafında fetch ile bu URL'e istek atarken kullanıcının arama
+    # kutusuna yazdığı kelimeyi buradan okuyoruz .get() kullanıyoruz
+    # çünkü query hiç gönderilmemişse hata vermek yerine None döner.
+    query = request.GET.get("query")
+    # icontains: food_name alanında, aranan kelimeyi İÇEREN (tam eşleşme
+    # değil) kayıtları, büyük/küçük harf FARKETMEDEN bulur
+    # Önce kendi veritabanımızda arıyoruz, USDA API'sine sadece
+    # burada hiç sonuç bulunamazsa gideceğiz (aşağıdaki if not food_list)
+    results = Food.objects.filter(food_name__icontains=query)
+    food_list = []
+    for food in results:
+        food_list.append({"id": food.id, "name": food.food_name, "calories": food.calorie_per_100g})
+
+    if not food_list:
+        response = requests.get("https://api.nal.usda.gov/fdc/v1/foods/search", params={"query": query, "api_key": settings.USDA_API_KEY})
+        data = response.json()
+        results = data["foods"]
+        for food in results:
+            for nutrient in food["foodNutrients"]:
+                if nutrient["nutrientName"] == "Energy":
+                    calories = nutrient["value"]
+
+            food_list.append({"usda_id": food["fdcId"], "name": food["description"], "calories": calories})
+
+    return JsonResponse({"results": food_list})
+
+
+@login_required
+def create_food_from_usda(request):
+    name = request.POST.get("name")
+    calories = request.POST.get("calories")
+    new_food = Food.objects.create(food_name=name, calorie_per_100g=calories)
+
+    return JsonResponse({"id": new_food.id})
+
+
+@login_required
+def search_exercise(request):
+    query = request.GET.get("query")
+    results = Exercise.objects.filter(exercise_name__icontains=query)
+    exercise_list = []
+    for exercise in results:
+        exercise_list.append({"id": exercise.id, "name": exercise.exercise_name, "calories": exercise.calories_per_hour})
+
+    return JsonResponse({"results": exercise_list})
+
+
+@login_required
+def delete_meal_item(request, meal_item_id):
+    deleted_item = get_object_or_404(MealItem, pk=meal_item_id)
+    if deleted_item.meal.user != request.user:
+        raise PermissionDenied
+    deleted_item.delete()
+
+    return redirect("tracker:meal_log")
+
+
+@login_required
+def delete_exercise(request, exercise_id):
+    deleted_item = get_object_or_404(ExerciseLog, pk=exercise_id)
+    if deleted_item.user != request.user:
+        raise PermissionDenied
+    deleted_item.delete()
+
+    return redirect("tracker:add_exercise")
+

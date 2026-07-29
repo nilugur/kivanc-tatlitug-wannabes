@@ -1,0 +1,266 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #FFF7F5;
+    font-family: 'Inter', sans-serif;
+    color: #241E28;
+}
+
+.page-wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+}
+
+.page-eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #E8447A;
+    margin: 0 0 4px;
+}
+
+.page-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 44px;
+    letter-spacing: 0.02em;
+    margin: 0 0 28px;
+    line-height: 1;
+}
+
+.log-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+@media (max-width: 800px) {
+    .log-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .log-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.log-column {
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(36, 30, 40, 0.06);
+    display: flex;
+    flex-direction: column;
+}
+
+.log-column-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.04em;
+    margin: 0 0 14px;
+    color: #E8447A;
+}
+
+.log-items {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.log-item {
+    background: #FFF7F5;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.log-item .food-name {
+    display: block;
+    font-weight: 600;
+    color: #241E28;
+}
+
+.log-item .food-qty {
+    display: block;
+    font-size: 12px;
+    color: #8A7E88;
+}
+
+.delete-form {
+    margin-top: 8px;
+}
+
+.delete-btn {
+    background: #E8447A;
+    color: #FFFFFF;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    background: #c9366a;
+}
+
+.log-empty {
+    font-size: 13px;
+    color: #8A7E88;
+    margin: 0 0 16px;
+    flex-grow: 1;
+    list-style: none;
+}
+
+.log-add-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    text-decoration: none;
+    background: #241E28;
+    color: #FFF7F5;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.log-add-btn:hover {
+    background: #E8447A;
+    transform: translateY(-2px);
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 28px;
+    color: #241E28;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    border-bottom: 2px solid #FFC93C;
+    padding-bottom: 2px;
+}
+</style>
+
+<div class="page-wrap">
+    <p class="page-eyebrow">Today</p>
+    <h1 class="page-title">Meal Log</h1>
+
+    <div class="log-grid">
+
+        <div class="log-column">
+            <h2 class="log-column-title">Breakfast</h2>
+            <ul class="log-items" id="breakfast-list">
+                {% for item in breakfast_items %}
+                <li class="log-item">
+                    <span class="food-name">{% if item.food %}{{ item.food.food_name }}{% else %}Deleted Food{% endif %}</span>
+                    <span class="food-qty">{{ item.quantity_g }} g</span>
+                    <form class="delete-form" method="post" action="{% url 'tracker:delete_meal_item' item.id %}" style="display: none;">
+                        {% csrf_token %}
+                        <button class="delete-btn" type="submit">Delete</button>
+                    </form>
+                </li>
+                {% empty %}
+                <li class="log-empty">Nothing logged yet.</li>
+                {% endfor %}
+            </ul>
+            <a class="log-add-btn" href="{% url 'tracker:meal_log_add' meal_type='B' %}">+ Add</a>
+        </div>
+
+        <div class="log-column">
+            <h2 class="log-column-title">Lunch</h2>
+            <ul class="log-items" id="lunch-list">
+                {% for item in lunch_items %}
+                <li class="log-item">
+                    <span class="food-name">{% if item.food %}{{ item.food.food_name }}{% else %}Deleted Food{% endif %}</span>
+                    <span class="food-qty">{{ item.quantity_g }} g</span>
+                    <form class="delete-form" method="post" action="{% url 'tracker:delete_meal_item' item.id %}" style="display: none;">
+                        {% csrf_token %}
+                        <button class="delete-btn" type="submit">Delete</button>
+                    </form>
+                </li>
+                {% empty %}
+                <li class="log-empty">Nothing logged yet.</li>
+                {% endfor %}
+            </ul>
+            <a class="log-add-btn" href="{% url 'tracker:meal_log_add' meal_type='L' %}">+ Add</a>
+        </div>
+
+        <div class="log-column">
+            <h2 class="log-column-title">Dinner</h2>
+            <ul class="log-items" id="dinner-list">
+                {% for item in dinner_items %}
+                <li class="log-item">
+                    <span class="food-name">{% if item.food %}{{ item.food.food_name }}{% else %}Deleted Food{% endif %}</span>
+                    <span class="food-qty">{{ item.quantity_g }} g</span>
+                    <form class="delete-form" method="post" action="{% url 'tracker:delete_meal_item' item.id %}" style="display: none;">
+                        {% csrf_token %}
+                        <button class="delete-btn" type="submit">Delete</button>
+                    </form>
+                </li>
+                {% empty %}
+                <li class="log-empty">Nothing logged yet.</li>
+                {% endfor %}
+            </ul>
+            <a class="log-add-btn" href="{% url 'tracker:meal_log_add' meal_type='D' %}">+ Add</a>
+        </div>
+
+        <div class="log-column">
+            <h2 class="log-column-title">Snack</h2>
+            <ul class="log-items" id="snack-list">
+                {% for item in snack_items %}
+                <li class="log-item">
+                    <span class="food-name">{% if item.food %}{{ item.food.food_name }}{% else %}Deleted Food{% endif %}</span>
+                    <span class="food-qty">{{ item.quantity_g }} g</span>
+                    <form class="delete-form" method="post" action="{% url 'tracker:delete_meal_item' item.id %}" style="display: none;">
+                        {% csrf_token %}
+                        <button class="delete-btn" type="submit">Delete</button>
+                    </form>
+                </li>
+                {% empty %}
+                <li class="log-empty">Nothing logged yet.</li>
+                {% endfor %}
+            </ul>
+            <a class="log-add-btn" href="{% url 'tracker:meal_log_add' meal_type='S' %}">+ Add</a>
+        </div>
+
+    </div>
+
+    <a class="back-link" href="{% url 'tracker:index' %}">Back to Dashboard</a>
+</div>
+
+<script>
+    var logItems = document.querySelectorAll(".log-item");
+    logItems.forEach(function(item) {
+        item.addEventListener("click", function(event) {
+            var form = item.querySelector(".delete-form");
+            if (event.target.classList.contains("delete-btn")) {
+                return;
+            }
+            if (form.style.display === "none") {
+                form.style.display = "block";
+            } else {
+                form.style.display = "none";
+            }
+        });
+    });
+</script>

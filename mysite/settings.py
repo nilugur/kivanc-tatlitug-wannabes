@@ -11,9 +11,23 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# .env dosyasındaki anahtar=değer satırlarını (örn. USDA_API_KEY=...)
+# okuyup Python'ın ortam değişkenlerine (environment variables) yükler.
+# .env dosyası .gitignore'da olduğu için GitHub'a hiç gitmez, bu sayede
+# API anahtarımız kod içine gömülmeden, güvenli şekilde saklanmış olur.
+load_dotenv()
+
+# load_dotenv() ile yüklenen değeri, os.environ.get(...) ile okuyup
+# bir Python değişkenine atıyoruz. Böylece projenin başka yerlerinden
+# (örneğin views.py'den) settings.USDA_API_KEY diyerek erişebileceğiz.
+USDA_API_KEY = os.environ.get("USDA_API_KEY")
 
 
 # Quick-start development settings - unsuitable for production

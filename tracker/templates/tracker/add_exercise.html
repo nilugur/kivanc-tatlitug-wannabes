@@ -105,13 +105,174 @@ body {
     border-bottom: 2px solid #FFC93C;
     padding-bottom: 2px;
 }
+
+.search-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #8A7E88;
+    margin-bottom: 6px;
+}
+
+.search-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.search-row input[type="text"] {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #EBDEE3;
+    background: #FFF7F5;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: #241E28;
+}
+
+.search-row input[type="text"]:focus {
+    outline: none;
+    border-color: #2AA876;
+}
+
+.search-row button {
+    background: #241E28;
+    color: #FFF7F5;
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 0 18px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.search-results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.search-result-item {
+    background: #FFF7F5;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: border-color 0.15s ease;
+}
+
+.search-result-item:hover {
+    border-color: #2AA876;
+}
+
+.search-result-item .result-name {
+    display: block;
+    font-weight: 600;
+    color: #241E28;
+}
+
+.search-result-item .result-cal {
+    display: block;
+    font-size: 12px;
+    color: #8A7E88;
+}
+
+.selected-exercise-msg {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2AA876;
+    margin: 0 0 16px;
+}
+
+.added-items {
+    list-style: none;
+    margin: 0 0 20px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.added-items li {
+    background: #FFF7F5;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.added-items .added-exercise-name {
+    display: block;
+    font-weight: 600;
+    color: #241E28;
+}
+
+.added-items .added-exercise-duration {
+    display: block;
+    font-size: 12px;
+    color: #8A7E88;
+}
+
+.delete-form {
+    margin-top: 8px;
+}
+
+.delete-btn {
+    background: #2AA876;
+    color: #FFFFFF;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    background: #1f8a60;
+}
+
+label[for="id_exercise"],
+#id_exercise {
+    display: none;
+}
 </style>
 
 <div class="page-wrap">
     <p class="page-eyebrow">Log a workout</p>
     <h2 class="page-title">Add Exercise</h2>
 
+    {% if today_exercises %}
+    <ul class="added-items">
+        {% for log in today_exercises %}
+        <li class="log-item">
+            <span class="added-exercise-name">{% if log.exercise %}{{ log.exercise.exercise_name }}{% else %}Deleted Exercise{% endif %}</span>
+            <span class="added-exercise-duration">{{ log.duration_minutes }} min</span>
+            <form class="delete-form" method="post" action="{% url 'tracker:delete_exercise' log.id %}" style="display: none;">
+                {% csrf_token %}
+                <button class="delete-btn" type="submit">Delete</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
     <div class="card">
+        <p class="search-label">Search Exercise</p>
+        <div class="search-row">
+            <input type="text" id="exercise-search-input" placeholder="e.g. running">
+            <button type="button" id="exercise-search-btn">Search</button>
+        </div>
+        <ul class="search-results" id="exercise-search-results"></ul>
+        <p class="selected-exercise-msg" id="selected-exercise-msg" style="display: none;"></p>
         <form method="post">
             {% csrf_token %}
             {{ exercise_log_form.as_p }}
@@ -121,3 +282,48 @@ body {
 
     <a class="done-link" href="{% url 'tracker:index' %}">Done</a>
 </div>
+
+<script>
+    var button = document.getElementById("exercise-search-btn");
+    button.addEventListener("click", function() {
+        var searchBox = document.getElementById("exercise-search-input");
+        var query = searchBox.value;
+        var url = "/tracker/search-exercise/?query=" + query;
+        fetch(url)
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                var resultsList = document.getElementById("exercise-search-results");
+                resultsList.innerHTML = "";
+                data.results.forEach(function(exercise) {
+                    var listItem = document.createElement("li");
+                    listItem.className = "search-result-item";
+                    listItem.innerHTML = "<span class='result-name'>" + exercise.name + "</span><span class='result-cal'>" + exercise.calories + " kcal/hour</span>";
+                    listItem.addEventListener("click", function() {
+                        var exerciseDropdown = document.getElementById("id_exercise");
+                        exerciseDropdown.value = exercise.id;
+                        var msgBox = document.getElementById("selected-exercise-msg");
+                        msgBox.innerHTML = "Selected: " + exercise.name;
+                        msgBox.style.display = "block";
+                    });
+                    resultsList.appendChild(listItem);
+                });
+            });
+    });
+
+    var logItems = document.querySelectorAll(".log-item");
+    logItems.forEach(function(item) {
+        item.addEventListener("click", function(event) {
+            var form = item.querySelector(".delete-form");
+            if (event.target.classList.contains("delete-btn")) {
+                return;
+            }
+            if (form.style.display === "none") {
+                form.style.display = "block";
+            } else {
+                form.style.display = "none";
+            }
+        });
+    });
+</script>

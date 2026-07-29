@@ -17,12 +17,6 @@ class DietitianProfileForm(forms.ModelForm):
         fields = ["specialty"]
 
 
-class MealForm(forms.ModelForm):
-    class Meta:
-        model = Meal
-        fields = ["meal_type"]
-
-
 class MealItemForm(forms.ModelForm):
     class Meta:
         model = MealItem
