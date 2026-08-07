@@ -256,7 +256,7 @@ label[for="id_exercise"],
         <li class="log-item">
             <span class="added-exercise-name">{% if log.exercise %}{{ log.exercise.exercise_name }}{% else %}Deleted Exercise{% endif %}</span>
             <span class="added-exercise-duration">{{ log.duration_minutes }} min</span>
-            <form class="delete-form" method="post" action="{% url 'tracker:delete_exercise' log.id %}" style="display: none;">
+            <form class="delete-form" method="post" action="{% url 'tracker:delete_exercise' log.id %}" style="display: none;" onsubmit="return confirm('Are you sure you want to delete this exercise?')">
                 {% csrf_token %}
                 <button class="delete-btn" type="submit">Delete</button>
             </form>

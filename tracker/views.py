@@ -15,94 +15,40 @@ from django.http import JsonResponse
 import requests
 from django.conf import settings
 
-
-def calculate_calories_consumed(user, date):
-    total = 0
-    meals = Meal.objects.filter(user=user, date__date=date)
-    for meal in meals:
-        for meal_item in meal.mealitem_set.all():
-            if meal_item.food:
-                total += (meal_item.quantity_g / 100) * meal_item.food.calorie_per_100g
-
-    return total
-
-
-def calculate_calories_burned(user, date):
-    total = 0
-    exercise_logs = ExerciseLog.objects.filter(user=user, date__date=date)
-    for log in exercise_logs:
-        if log.exercise:
-            total += (log.duration_minutes / 60) * log.exercise.calories_per_hour
-
-    return total
-
-
-def calculate_weekly_calories_consumed(user, date):
-    week_ago = date - timedelta(days=7)
-    weekly_data = MealItem.objects.filter(meal__user=user, meal__date__date__gte=week_ago,  meal__date__date__lte=date)
-    total = 0
-    for items in weekly_data:
-        if items.food:
-            total += (items.quantity_g / 100) * items.food.calorie_per_100g
-
-    return total
-
-
-def calculate_weekly_calories_burned(user, date):
-    week_ago = date - timedelta(days=7)
-    weekly_data = ExerciseLog.objects.filter(user=user, date__date__gte=week_ago, date__date__lte=date)
-    total = 0
-    for items in weekly_data:
-        if items.exercise:
-            total += (items.duration_minutes / 60) * items.exercise.calories_per_hour
-
-    return total
+from .utils import (
+    calculate_calories_consumed,
+    calculate_calories_burned,
+    calculate_weekly_calories_consumed,
+    calculate_weekly_calories_burned,
+    get_selected_date,
+    get_daily_breakdown,
+)
 
 
 def index(request):
     if request.user.is_authenticated:
-        try:
+        if ClientProfile.objects.filter(user=request.user).exists():
             profile = ClientProfile.objects.get(user=request.user)
             index_template = "tracker/client_index.html"
-            # request.GET, URL'in sonundaki ?date=... gibi parametreleri
-            # tutan bir sözlük. .get("date") ile "date" anahtarını arıyoruz;
-            # .get() kullanıyoruz çünkü kullanıcı hiç tarih seçmediyse
-            # (URL'de ?date=... yoksa) hata vermek yerine None döndürür.
-            date_param = request.GET.get("date")
-            if date_param:
-                # request.GET'ten gelen değer her zaman bir string'dir
-                # (örn. "2026-07-16"), bir tarih nesnesi değil.
-                # strptime bu string'i "%Y-%m-%d" kalıbına göre
-                # (yıl-ay-gün) okuyup bir datetime nesnesine çeviriyor.
-                # Sonundaki .date() ise saat kısmını atıp sadece tarihi alıyor
-                # çünkü filter(date__date=...) sadece tarih (saatsiz) bekliyor.
-                selected_date = datetime.strptime(date_param, "%Y-%m-%d").date()
-            else:
-                # Kullanıcı hiç tarih seçmediyse, varsayılan olarak bugünü göster
-                selected_date = timezone.now().date()
-
+            selected_date = get_selected_date(request)
             consumed = calculate_calories_consumed(request.user, selected_date)
             burned = calculate_calories_burned(request.user, selected_date)
-            breakfast = MealItem.objects.filter(meal__user=request.user, meal__meal_type="B", meal__date__date=selected_date)
-            lunch = MealItem.objects.filter(meal__user=request.user, meal__meal_type="L", meal__date__date=selected_date)
-            dinner = MealItem.objects.filter(meal__user=request.user, meal__meal_type="D", meal__date__date=selected_date)
-            snack = MealItem.objects.filter(meal__user=request.user, meal__meal_type="S", meal__date__date=selected_date)
-            exercises = ExerciseLog.objects.filter(user=request.user, date__date=selected_date)
+            daily_data = get_daily_breakdown(request.user, selected_date)
             weekly_consumed = calculate_weekly_calories_consumed(request.user, selected_date)
             weekly_burned = calculate_weekly_calories_burned(request.user, selected_date)
 
             context = {"calories_consumed": consumed,
                        "calories_burned": burned,
                        "selected_date": selected_date,
-                       "breakfast": breakfast,
-                       "lunch": lunch,
-                       "dinner": dinner,
-                       "snack": snack,
-                       "exercises": exercises,
+                       "breakfast": daily_data["breakfast"],
+                       "lunch": daily_data["lunch"],
+                       "dinner": daily_data["dinner"],
+                       "snack": daily_data["snack"],
+                       "exercises": daily_data["exercises"],
                        "weekly_consumed": weekly_consumed,
                        "weekly_burned": weekly_burned
                        }
-        except ClientProfile.DoesNotExist:
+        else:
             profile = DietitianProfile.objects.get(user=request.user)
             clients = ClientProfile.objects.filter(dietitian=profile)
             index_template = "tracker/dietitian_index.html"
@@ -219,12 +165,12 @@ def add_exercise(request):
 
 @login_required
 def profile(request):
-    try:
+    if ClientProfile.objects.filter(user=request.user).exists():
         profile = ClientProfile.objects.get(user=request.user)
         profile_form = ClientProfileForm
         profile_template = "tracker/profile_client.html"
 
-    except ClientProfile.DoesNotExist:
+    else:
         profile = DietitianProfile.objects.get(user=request.user)
         profile_form = DietitianProfileForm
         profile_template = "tracker/profile_dietitian.html"
@@ -259,19 +205,10 @@ def client_detail(request, client_id):
     if profile != client.dietitian:
         raise PermissionDenied
 
-    date_param = request.GET.get("date")
-    if date_param:
-        selected_date = datetime.strptime(date_param, "%Y-%m-%d").date()
-    else:
-        selected_date = timezone.now().date()
-
+    selected_date = get_selected_date(request)
     consumed = calculate_calories_consumed(client.user, selected_date)
     burned = calculate_calories_burned(client.user, selected_date)
-    breakfast = MealItem.objects.filter(meal__user=client.user, meal__meal_type="B", meal__date__date=selected_date)
-    lunch = MealItem.objects.filter(meal__user=client.user, meal__meal_type="L", meal__date__date=selected_date)
-    dinner = MealItem.objects.filter(meal__user=client.user, meal__meal_type="D", meal__date__date=selected_date)
-    snack = MealItem.objects.filter(meal__user=client.user, meal__meal_type="S", meal__date__date=selected_date)
-    exercises = ExerciseLog.objects.filter(user=client.user, date__date=selected_date)
+    daily_data = get_daily_breakdown(client.user, selected_date)
 
     return render(
         request,
@@ -280,11 +217,11 @@ def client_detail(request, client_id):
          "calories_consumed": consumed,
          "calories_burned": burned,
          "selected_date": selected_date,
-         "breakfast": breakfast,
-         "lunch": lunch,
-         "dinner": dinner,
-         "snack": snack,
-         "exercises": exercises}
+         "breakfast": daily_data["breakfast"],
+        "lunch": daily_data["lunch"],
+        "dinner": daily_data["dinner"],
+        "snack": daily_data["snack"],
+        "exercises": daily_data["exercises"]}
         )
 
 
@@ -339,7 +276,7 @@ def search_food(request):
         food_list.append({"id": food.id, "name": food.food_name, "calories": food.calorie_per_100g})
 
     if not food_list:
-        response = requests.get("https://api.nal.usda.gov/fdc/v1/foods/search", params={"query": query, "api_key": settings.USDA_API_KEY})
+        response = requests.get("https://api.nal.usda.gov/fdc/v1/foods/search", params={"query": query, "api_key": settings.USDA_API_KEY}, timeout=5)
         data = response.json()
         results = data.get("foods", [])
         for food in results:
