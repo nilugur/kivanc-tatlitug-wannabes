@@ -193,7 +193,7 @@ body {
                 <li class="log-item">
                     <span class="food-name">{% if item.food %}{{ item.food.food_name }}{% else %}Deleted Food{% endif %}</span>
                     <span class="food-qty">{{ item.quantity_g }} g</span>
-                    <form class="delete-form" method="post" action="{% url 'tracker:delete_meal_item' item.id %}" style="display: none;">
+                    <form class="delete-form" method="post" action="{% url 'tracker:delete_meal_item' item.id %}" style="display: none;" onsubmit="return confirm('Are you sure you want to delete this meal item?')">
                         {% csrf_token %}
                         <button class="delete-btn" type="submit">Delete</button>
                     </form>
@@ -212,7 +212,7 @@ body {
                 <li class="log-item">
                     <span class="food-name">{% if item.food %}{{ item.food.food_name }}{% else %}Deleted Food{% endif %}</span>
                     <span class="food-qty">{{ item.quantity_g }} g</span>
-                    <form class="delete-form" method="post" action="{% url 'tracker:delete_meal_item' item.id %}" style="display: none;">
+                    <form class="delete-form" method="post" action="{% url 'tracker:delete_meal_item' item.id %}" style="display: none;" onsubmit="return confirm('Are you sure you want to delete this meal item?')">
                         {% csrf_token %}
                         <button class="delete-btn" type="submit">Delete</button>
                     </form>
@@ -231,7 +231,7 @@ body {
                 <li class="log-item">
                     <span class="food-name">{% if item.food %}{{ item.food.food_name }}{% else %}Deleted Food{% endif %}</span>
                     <span class="food-qty">{{ item.quantity_g }} g</span>
-                    <form class="delete-form" method="post" action="{% url 'tracker:delete_meal_item' item.id %}" style="display: none;">
+                    <form class="delete-form" method="post" action="{% url 'tracker:delete_meal_item' item.id %}" style="display: none;" onsubmit="return confirm('Are you sure you want to delete this meal item?')">
                         {% csrf_token %}
                         <button class="delete-btn" type="submit">Delete</button>
                     </form>
