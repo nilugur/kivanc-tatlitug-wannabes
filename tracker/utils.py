@@ -1,6 +1,6 @@
 from django.utils import timezone
 from datetime import datetime, timedelta
-from .models import Meal, ExerciseLog, MealItem
+from .models.logs import Meal, ExerciseLog, MealItem
 
 
 def calculate_calories_consumed(user, date):

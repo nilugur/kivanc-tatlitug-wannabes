@@ -1,5 +1,6 @@
 from django import forms
-from .models import ClientProfile, DietitianProfile, Meal, MealItem, ExerciseLog
+from .models.profiles import ClientProfile, DietitianProfile
+from .models.logs import MealItem, ExerciseLog
 
 
 class ClientProfileForm(forms.ModelForm):

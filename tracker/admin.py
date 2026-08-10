@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import ClientProfile, DietitianProfile
-from .models import Food, Meal, Exercise, ExerciseLog, MealItem
+from .models.profiles import ClientProfile, DietitianProfile
+from .models.catalog import Food, Exercise
+from .models.logs import Meal, MealItem, ExerciseLog
 
 admin.site.register(ClientProfile)
 admin.site.register(DietitianProfile)

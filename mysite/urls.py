@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic.base import RedirectView
-from tracker import views
+from tracker.views import auth
 
 urlpatterns = [
     # Kök URL'e (localhost:8000/) gelen ziyaretçiyi otomatik olarak
@@ -30,7 +30,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('tracker/', include('tracker.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('accounts/register/', views.register_choice, name="register_choice"),
-    path('accounts/register/clients/', views.register_client, name="register_client"),
-    path('accounts/register/dietitian/', views.register_dietitian, name="register_dietitian"),
+    path('accounts/register/', auth.register_choice, name="register_choice"),
+    path('accounts/register/clients/', auth.register_client, name="register_client"),
+    path('accounts/register/dietitian/', auth.register_dietitian, name="register_dietitian"),
     ]
