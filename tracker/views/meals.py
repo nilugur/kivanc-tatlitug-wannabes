@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
+from datetime import timedelta
 
 from ..models.logs import Meal, MealItem
 from ..models.catalog import Food
@@ -38,9 +39,12 @@ class AddMealItemView(LoginRequiredMixin, View):
         self.meal = get_object_or_404(Meal, pk=kwargs["meal_id"])
         self.items = self.meal.mealitem_set.all()
 
+        self.one_month_ago = timezone.now().date() - timedelta(days=30)
+        self.recently_used = Food.objects.filter(mealitem__meal__user=request.user, mealitem__meal__date__date__gte=self.one_month_ago).distinct()
+
     def get(self, request, meal_id):
         meal_item_form = MealItemForm()
-        return render(request, "tracker/add_meal_item.html", {"meal_item_form": meal_item_form, "meal": self.meal, "items": self.items})
+        return render(request, "tracker/add_meal_item.html", {"meal_item_form": meal_item_form, "meal": self.meal, "items": self.items, "recently_used": self.recently_used})
 
     def post(self, request, meal_id):
         meal_item_form = MealItemForm(request.POST)
@@ -50,7 +54,7 @@ class AddMealItemView(LoginRequiredMixin, View):
             new_meal_item.save()
             return redirect("tracker:add_meal_item", meal_id=self.meal.id)
         else:
-            return render(request, "tracker/add_meal_item.html", {"meal_item_form": meal_item_form, "meal": self.meal, "items": self.items})
+            return render(request, "tracker/add_meal_item.html", {"meal_item_form": meal_item_form, "meal": self.meal, "items": self.items, "recently_used": self.recently_used})
 
 
 class MealLogView(LoginRequiredMixin, View):

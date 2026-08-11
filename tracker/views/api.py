@@ -25,16 +25,15 @@ class SearchFoodView(LoginRequiredMixin, View):
         for food in results:
             food_list.append({"id": food.id, "name": food.food_name, "calories": food.calorie_per_100g})
 
-        if not food_list:
-            response = requests.get("https://api.nal.usda.gov/fdc/v1/foods/search", params={"query": query, "api_key": settings.USDA_API_KEY}, timeout=5)
-            data = response.json()
-            results = data.get("foods", [])
-            for food in results:
-                for nutrient in food["foodNutrients"]:
-                    if nutrient["nutrientName"] == "Energy":
-                        calories = nutrient["value"]
+        response = requests.get("https://api.nal.usda.gov/fdc/v1/foods/search", params={"query": query, "api_key": settings.USDA_API_KEY}, timeout=5)
+        data = response.json()
+        results = data.get("foods", [])
+        for food in results:
+            for nutrient in food["foodNutrients"]:
+                if nutrient["nutrientName"] == "Energy":
+                    calories = nutrient["value"]
 
-                food_list.append({"usda_id": food["fdcId"], "name": food["description"], "calories": calories})
+            food_list.append({"usda_id": food["fdcId"], "name": food["description"], "calories": calories})
 
         return JsonResponse({"results": food_list})
 
@@ -59,4 +58,3 @@ class SearchExerciseView(LoginRequiredMixin, View):
             exercise_list.append({"id": exercise.id, "name": exercise.exercise_name, "calories": exercise.calories_per_hour})
 
         return JsonResponse({"results": exercise_list})
-

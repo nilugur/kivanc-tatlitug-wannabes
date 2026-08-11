@@ -30,7 +30,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('tracker/', include('tracker.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('accounts/register/', auth.register_choice, name="register_choice"),
-    path('accounts/register/clients/', auth.register_client, name="register_client"),
-    path('accounts/register/dietitian/', auth.register_dietitian, name="register_dietitian"),
+    path('accounts/register/', auth.RegisterChoiceView.as_view(), name="register_choice"),
+    path('accounts/register/clients/', auth.RegisterClientView.as_view(), name="register_client"),
+    path('accounts/register/dietitian/', auth.RegisterDietitianView.as_view(), name="register_dietitian"),
     ]

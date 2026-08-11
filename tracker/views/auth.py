@@ -2,12 +2,23 @@ from django.shortcuts import render
 from django.shortcuts import redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
+from django.views import View
 
 from ..forms import ClientProfileForm, DietitianProfileForm
 
 
-def register_client(request):
-    if request.method == "POST":
+class RegisterClientView(View):
+    def get(self, request):
+        user_form = UserCreationForm()
+        client_form = ClientProfileForm()
+
+        return render(
+        request,
+        "tracker/register_client.html",
+            {"user_form": user_form, "client_form": client_form}
+    )
+
+    def post(self, request):
         user_form = UserCreationForm(request.POST)
         client_form = ClientProfileForm(request.POST)
         if user_form.is_valid() and client_form.is_valid():
@@ -22,20 +33,26 @@ def register_client(request):
             login(request, new_user)
             # kayıt başarılı olunca kullanıcı indexe yönlendirilir
             return redirect("tracker:index")
-
-    else:
-        user_form = UserCreationForm()
-        client_form = ClientProfileForm()
-
-    return render(
-        request,
-        "tracker/register_client.html",
-        {"user_form": user_form, "client_form": client_form}
+        else:
+            return render(
+            request,
+            "tracker/register_client.html",
+            {"user_form": user_form, "client_form": client_form}
         )
 
 
-def register_dietitian(request):
-    if request.method == "POST":
+class RegisterDietitianView(View):
+    def get(self, request):
+        user_form = UserCreationForm()
+        dietitian_form = DietitianProfileForm()
+
+        return render(
+        request,
+        "tracker/register_dietitian.html",
+        {"user_form": user_form, "dietitian_form": dietitian_form}
+        )
+
+    def post(self, request):
         user_form = UserCreationForm(request.POST)
         dietitian_form = DietitianProfileForm(request.POST)
         if user_form.is_valid() and dietitian_form.is_valid():
@@ -49,17 +66,14 @@ def register_dietitian(request):
             # görünmeye devam eder.
             login(request, new_user)
             return redirect("tracker:index")
-
-    else:
-        user_form = UserCreationForm()
-        dietitian_form = DietitianProfileForm()
-
-    return render(
-        request,
-        "tracker/register_dietitian.html",
-        {"user_form": user_form, "dietitian_form": dietitian_form}
-    )
+        else:
+            return render(
+            request,
+            "tracker/register_dietitian.html",
+            {"user_form": user_form, "dietitian_form": dietitian_form}
+        )
 
 
-def register_choice(request):
-    return render(request, "tracker/register_choice.html", {})
+class RegisterChoiceView(View):
+    def get(self, request):
+        return render(request, "tracker/register_choice.html", {})

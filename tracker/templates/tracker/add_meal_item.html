@@ -1,5 +1,3 @@
-
-
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
 
@@ -185,9 +183,16 @@ body {
     border: none;
     font-weight: 600;
     font-size: 14px;
-    padding: 0 18px;
+    padding: 0 12px;
     border-radius: 10px;
     cursor: pointer;
+    white-space: nowrap;
+}
+
+.search-row button.secondary {
+    background: #FFF7F5;
+    color: #241E28;
+    border: 1px solid #EBDEE3;
 }
 
 .search-results {
@@ -232,6 +237,21 @@ body {
     margin: 0 0 16px;
 }
 
+.recently-used-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #8A7E88;
+    margin: 0 0 10px;
+}
+
+.recently-used-empty {
+    font-size: 13px;
+    color: #8A7E88;
+    margin: 0 0 20px;
+}
+
 /* The Food dropdown is now set automatically by JavaScript when a
    search result is clicked, so we hide it from view. It still exists
    in the page and still gets submitted with the form. */
@@ -258,10 +278,26 @@ body {
     {% endif %}
 
     <div class="card">
+        <p class="recently-used-title">Recently Used</p>
+        {% if recently_used %}
+        <ul class="search-results" id="recently-used-list">
+            {% for food in recently_used %}
+            <li class="search-result-item" data-id="{{ food.id }}" data-name="{{ food.food_name }}">
+                <span class="result-name">{{ food.food_name }}</span>
+                <span class="result-cal">{{ food.calorie_per_100g }} kcal/100g</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="recently-used-empty">No recently used foods in the last month.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
         <p class="search-label">Search Food</p>
         <div class="search-row">
             <input type="text" id="food-search-input" placeholder="e.g. chicken breast">
-            <button type="button" id="food-search-btn">Search</button>
+            <button type="button" id="food-search-btn">Search All</button>
         </div>
         <ul class="search-results" id="food-search-results"></ul>
         <p class="selected-food-msg" id="selected-food-msg" style="display: none;"></p>
@@ -277,7 +313,34 @@ body {
 </div>
 
 
-<script> 
+<script>
+    // Ortak seçim mantığı: hem "Recently Used" listesinde hem arama
+    // sonuçlarında kullanılıyor, tekrar yazmamak için ayrı bir fonksiyon
+    // haline getirdik.
+    function selectExistingFood(id, name) {
+        var foodDropdown = document.getElementById("id_food");
+        foodDropdown.value = id;
+        var msgBox = document.getElementById("selected-food-msg");
+        msgBox.innerHTML = "Selected: " + name;
+        msgBox.style.display = "block";
+    }
+
+    // Recently Used listesindeki her öğeye tıklama davranışı ekliyoruz.
+    // Bu öğeler zaten veritabanında var (Django tarafından, sayfa
+    // yüklenirken render edildi), bu yüzden USDA/create adımına hiç
+    // gerek yok — direkt seçiyoruz.
+    var recentlyUsedList = document.getElementById("recently-used-list");
+    if (recentlyUsedList) {
+        var recentItems = recentlyUsedList.querySelectorAll(".search-result-item");
+        recentItems.forEach(function(item) {
+            item.addEventListener("click", function() {
+                var id = item.getAttribute("data-id");
+                var name = item.getAttribute("data-name");
+                selectExistingFood(id, name);
+            });
+        });
+    }
+
     var button = document.getElementById("food-search-btn");
     button.addEventListener("click", function() {
         var searchBox = document.getElementById("food-search-input");
@@ -348,11 +411,7 @@ body {
                         }
 
                         else{
-                            var foodDropdown = document.getElementById("id_food");
-                            foodDropdown.value = food.id;
-                            var msgBox = document.getElementById("selected-food-msg");
-                            msgBox.innerHTML = "Selected: " + food.name;
-                            msgBox.style.display = "block";
+                            selectExistingFood(food.id, food.name);
                         }
                     });
                     resultsList.appendChild(listItem);
