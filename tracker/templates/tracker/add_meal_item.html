@@ -300,6 +300,7 @@ body {
             <button type="button" id="food-search-btn">Search All</button>
         </div>
         <ul class="search-results" id="food-search-results"></ul>
+        <button type="button" id="load-more-btn" class="secondary" style="display: none; width: 100%; margin-top: 10px;">Load More</button>
         <p class="selected-food-msg" id="selected-food-msg" style="display: none;"></p>
 
         <form method="post">
@@ -342,82 +343,120 @@ body {
     }
 
     var button = document.getElementById("food-search-btn");
-    button.addEventListener("click", function() {
-        var searchBox = document.getElementById("food-search-input");
-        var query = searchBox.value;
-        var url = "/tracker/search-food/?query=" + query;
+    var loadMoreBtn = document.getElementById("load-more-btn");
+    // Bu iki değişkeni, addEventListener fonksiyonlarının DIŞINDA
+    // tanımlıyoruz — çünkü her tıklamada "sıfırlanmalarını" değil,
+    // aramalar arasında "hatırlanmalarını" istiyoruz.
+    var currentPage = 1;
+    var currentQuery = "";
+
+    // Bir arama sonucu (food) için, tıklanabilir bir <li> oluşturan
+    // fonksiyon. Hem ilk aramada hem "Load More" ile gelen ek
+    // sonuçlarda kullanılıyor, bu yüzden ayrı bir fonksiyona çıkardık.
+    function createFoodResultItem(food) {
+        var listItem = document.createElement("li");
+        listItem.className = "search-result-item";
+        listItem.innerHTML = "<span class='result-name'>" + food.name + "</span><span class='result-cal'>" + food.calories + " kcal/100g</span>";
+        listItem.addEventListener("click", function() {
+            if (food.usda_id){
+                // 403 (Forbidden) hatasının çözümü:
+                // Django'nun CSRF koruması, her POST isteğinde bir güvenlik kodu
+                // (token) bekliyor. <form> gönderimlerinde bunu {% csrf_token %}
+                // otomatik sağlıyordu, ama fetch ile attığımız bu istek bir <form>
+                // değil — hiçbir token taşımıyordu, bu yüzden Django isteği
+                // güvensiz sayıp 403 ile reddediyordu. Sayfada zaten var olan gizli
+                // CSRF input'unu bulup değerini okuyoruz:
+                var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                fetch("{% url 'tracker:create_food_from_usda' %}", {
+                    method: "POST",
+                    // X-CSRFToken: okuduğumuz güvenlik kodunu isteğin başlığına
+                    // ekliyoruz, böylece Django isteği artık güvenilir buluyor (403 çözüldü).
+                    //
+                    // 500 (Internal Server Error) hatasının çözümü:
+                    // fetch, Content-Type belirtmezsek varsayılan olarak "text/plain"
+                    // gönderiyor. Django'nun request.POST'u, sadece
+                    // "application/x-www-form-urlencoded" (form verisi) formatını
+                    // otomatik ayrıştırıyor — "text/plain" geldiğinde request.POST
+                    // tamamen boş kalıyordu. Bu yüzden request.POST.get("name") None
+                    // dönüyor, Food.objects.create(food_name=None, ...) veritabanı
+                    // hatası (NOT NULL constraint) veriyordu. Content-Type'ı açıkça
+                    // belirtmek, Django'nun body'yi doğru ayrıştırmasını sağlıyor.
+                    headers: {"X-CSRFToken": csrfToken, "Content-Type": "application/x-www-form-urlencoded"},
+                    body: "name=" + food.name + "&calories=" + food.calories
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    var foodDropdown = document.getElementById("id_food");
+                    // Dropdown (id_food), sayfa ilk yüklendiğinde Django tarafından oluşturuldu
+                    // o an bu yeni USDA yiyeceği veritabanında yoktu,
+                    // bu yüzden dropdown'ın seçenekleri arasında da yer almıyor.
+                    // Önce bu yeni Food kaydı için elle bir <option> oluşturuyoruz.
+                    var newOption = document.createElement("option");
+                    newOption.value = data.id;        // dropdown'ın "value"su -> yeni Food'un gerçek id'si
+                    newOption.innerHTML = food.name;  // kullanıcının göreceği metin -> yiyecek adı
+                    // ÖNEMLİ SIRALAMA: appendChild, foodDropdown.value satırından ÖNCE gelmeli
+                    // Çünkü tarayıcı, dropdown'da olmayan bir value'yu "seç"
+                    // dediğimizde bunu sessizce görmezden geliyor (hata vermiyor).
+                    // Bunu ters sırayla yazdığımızda tam olarak bu yüzden dropdown boş
+                    // kalmış, form "food" alanını None göndermiş, ve kayıtlar "Deleted
+                    // Food" olarak görünmüştü.
+                    foodDropdown.appendChild(newOption); // önce, seçeneği dropdown'a EKLE
+                    foodDropdown.value = data.id;        // sonra, o seçeneği SEÇ
+                    var msgBox = document.getElementById("selected-food-msg");
+                    msgBox.innerHTML = "Selected: " + food.name;
+                    msgBox.style.display = "block";
+                });
+            }
+
+            else{
+                selectExistingFood(food.id, food.name);
+            }
+        });
+        return listItem;
+    }
+
+    // Bir sayfa isteğini çalıştıran ortak fonksiyon. append=false ise
+    // (yeni bir arama başlıyorsa) önce listeyi temizliyor; append=true
+    // ise ("Load More" ile geldiyse) mevcut sonuçların altına ekliyor.
+    function performSearch(page, append) {
+        var url = "/tracker/search-food/?query=" + currentQuery + "&page=" + page;
         fetch(url)
             .then(function(response) {
                 return response.json();
             })
             .then(function(data) {
                 var resultsList = document.getElementById("food-search-results");
-                resultsList.innerHTML = "";
+                if (!append) {
+                    resultsList.innerHTML = "";
+                }
                 data.results.forEach(function(food) {
-                    var listItem = document.createElement("li");
-                    listItem.className = "search-result-item";
-                    listItem.innerHTML = "<span class='result-name'>" + food.name + "</span><span class='result-cal'>" + food.calories + " kcal/100g</span>";
-                    listItem.addEventListener("click", function() {
-                        if (food.usda_id){
-                            // 403 (Forbidden) hatasının çözümü:
-                            // Django'nun CSRF koruması, her POST isteğinde bir güvenlik kodu
-                            // (token) bekliyor. <form> gönderimlerinde bunu {% csrf_token %}
-                            // otomatik sağlıyordu, ama fetch ile attığımız bu istek bir <form>
-                            // değil — hiçbir token taşımıyordu, bu yüzden Django isteği
-                            // güvensiz sayıp 403 ile reddediyordu. Sayfada zaten var olan gizli
-                            // CSRF input'unu bulup değerini okuyoruz:
-                            var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                            fetch("{% url 'tracker:create_food_from_usda' %}", {
-                                method: "POST",
-                                // X-CSRFToken: okuduğumuz güvenlik kodunu isteğin başlığına
-                                // ekliyoruz, böylece Django isteği artık güvenilir buluyor (403 çözüldü).
-                                //
-                                // 500 (Internal Server Error) hatasının çözümü:
-                                // fetch, Content-Type belirtmezsek varsayılan olarak "text/plain"
-                                // gönderiyor. Django'nun request.POST'u, sadece
-                                // "application/x-www-form-urlencoded" (form verisi) formatını
-                                // otomatik ayrıştırıyor — "text/plain" geldiğinde request.POST
-                                // tamamen boş kalıyordu. Bu yüzden request.POST.get("name") None
-                                // dönüyor, Food.objects.create(food_name=None, ...) veritabanı
-                                // hatası (NOT NULL constraint) veriyordu. Content-Type'ı açıkça
-                                // belirtmek, Django'nun body'yi doğru ayrıştırmasını sağlıyor.
-                                headers: {"X-CSRFToken": csrfToken, "Content-Type": "application/x-www-form-urlencoded"},
-                                body: "name=" + food.name + "&calories=" + food.calories
-                            })
-                            .then(function(response) {
-                                return response.json();
-                            })
-                            .then(function(data) {
-                                var foodDropdown = document.getElementById("id_food");
-                                // Dropdown (id_food), sayfa ilk yüklendiğinde Django tarafından oluşturuldu
-                                // o an bu yeni USDA yiyeceği veritabanında yoktu,
-                                // bu yüzden dropdown'ın seçenekleri arasında da yer almıyor.
-                                // Önce bu yeni Food kaydı için elle bir <option> oluşturuyoruz.
-                                var newOption = document.createElement("option");
-                                newOption.value = data.id;        // dropdown'ın "value"su -> yeni Food'un gerçek id'si
-                                newOption.innerHTML = food.name;  // kullanıcının göreceği metin -> yiyecek adı
-                                // ÖNEMLİ SIRALAMA: appendChild, foodDropdown.value satırından ÖNCE gelmeli
-                                // Çünkü tarayıcı, dropdown'da olmayan bir value'yu "seç"
-                                // dediğimizde bunu sessizce görmezden geliyor (hata vermiyor).
-                                // Bunu ters sırayla yazdığımızda tam olarak bu yüzden dropdown boş
-                                // kalmış, form "food" alanını None göndermiş, ve kayıtlar "Deleted
-                                // Food" olarak görünmüştü.
-                                foodDropdown.appendChild(newOption); // önce, seçeneği dropdown'a EKLE
-                                foodDropdown.value = data.id;        // sonra, o seçeneği SEÇ
-                                var msgBox = document.getElementById("selected-food-msg");
-                                msgBox.innerHTML = "Selected: " + food.name;
-                                msgBox.style.display = "block";
-                            });
-                        }
-
-                        else{
-                            selectExistingFood(food.id, food.name);
-                        }
-                    });
+                    var listItem = createFoodResultItem(food);
                     resultsList.appendChild(listItem);
-
                 });
-                
+
+                // total_pages, kaç sayfa olduğunu söylüyor. Şu anki
+                // sayfa, son sayfaya ulaştıysa "Load More" butonunu
+                // gizliyoruz, ulaşmadıysa gösteriyoruz.
+                if (page < data.total_pages) {
+                    loadMoreBtn.style.display = "block";
+                } else {
+                    loadMoreBtn.style.display = "none";
+                }
             });
+    }
+
+    button.addEventListener("click", function() {
+        var searchBox = document.getElementById("food-search-input");
+        currentQuery = searchBox.value;
+        currentPage = 1;
+        performSearch(currentPage, false);
     });
+
+    loadMoreBtn.addEventListener("click", function() {
+        currentPage = currentPage + 1;
+        performSearch(currentPage, true);
+    });
+
 </script>

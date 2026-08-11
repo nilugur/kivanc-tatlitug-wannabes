@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 import requests
 from django.conf import settings
+from django.core.paginator import Paginator
 
 from ..models.catalog import Food, Exercise
 
@@ -35,7 +36,11 @@ class SearchFoodView(LoginRequiredMixin, View):
 
             food_list.append({"usda_id": food["fdcId"], "name": food["description"], "calories": calories})
 
-        return JsonResponse({"results": food_list})
+        page = int(request.GET.get("page", 1))
+        paginator = Paginator(food_list, 10)
+        page_obj = paginator.page(page)
+
+        return JsonResponse({"results": list(page_obj), "total_pages": paginator.num_pages})
 
 
 class CreateFoodFromUSDAView(LoginRequiredMixin, View):
