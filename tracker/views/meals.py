@@ -39,8 +39,8 @@ class AddMealItemView(LoginRequiredMixin, View):
         self.meal = get_object_or_404(Meal, pk=kwargs["meal_id"])
         self.items = self.meal.mealitem_set.all()
 
-        self.one_month_ago = timezone.now().date() - timedelta(days=30)
-        self.recently_used = Food.objects.filter(mealitem__meal__user=request.user, mealitem__meal__date__date__gte=self.one_month_ago).distinct()
+        self.two_weeks_ago = timezone.now().date() - timedelta(days=15)
+        self.recently_used = Food.objects.filter(mealitem__meal__user=request.user, mealitem__meal__date__date__gte=self.two_weeks_ago).distinct()
 
     def get(self, request, meal_id):
         meal_item_form = MealItemForm()
