@@ -447,6 +447,20 @@ body {
                 </ul>
             </div>
 
+            <div class="card">
+                <p class="card-label">Recommended For You</p>
+                <ul class="log-items">
+                    {% for food, count in recommended_foods %}
+                    <li class="log-item">
+                        <span class="food-name">{{ food.food_name }}</span>
+                        <span class="food-qty">{{ food.calorie_per_100g }} kcal/100g</span>
+                    </li>
+                    {% empty %}
+                    <li class="log-empty">Not enough data yet for recommendations.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
             <div class="footer-row">
                 <a class="profile-link" href="{% url 'tracker:profile' %}">Profile</a>
                 <form class="logout-form" method="post" action="{% url 'logout' %}">

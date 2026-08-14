@@ -47,9 +47,13 @@ class CreateFoodFromUSDAView(LoginRequiredMixin, View):
     def post(self, request):
         name = request.POST.get("name")
         calories = request.POST.get("calories")
-        new_food = Food.objects.create(food_name=name, calorie_per_100g=calories)
+        if Food.objects.filter(food_name=name).exists():
+            food = Food.objects.get(food_name=name)
 
-        return JsonResponse({"id": new_food.id})
+        else:
+            food = Food.objects.create(food_name=name, calorie_per_100g=calories)
+
+        return JsonResponse({"id": food.id})
 
 
 class SearchExerciseView(LoginRequiredMixin, View):

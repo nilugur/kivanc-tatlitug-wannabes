@@ -4,6 +4,7 @@ from ..models.profiles import ClientProfile, DietitianProfile
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from ..recommender import recommended_foods
 
 
 from ..utils import (
@@ -29,6 +30,8 @@ class IndexView(View):
                 weekly_consumed = calculate_weekly_calories_consumed(request.user, selected_date)
                 weekly_burned = calculate_weekly_calories_burned(request.user, selected_date)
 
+                recommended = recommended_foods(request.user.id, 5, 5)
+
                 context = {"calories_consumed": consumed,
                            "calories_burned": burned,
                            "selected_date": selected_date,
@@ -38,7 +41,8 @@ class IndexView(View):
                            "snack": daily_data["snack"],
                            "exercises": daily_data["exercises"],
                            "weekly_consumed": weekly_consumed,
-                           "weekly_burned": weekly_burned
+                           "weekly_burned": weekly_burned,
+                           "recommended_foods": recommended
                            }
             else:
                 profile = DietitianProfile.objects.get(user=request.user)

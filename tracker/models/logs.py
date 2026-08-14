@@ -14,10 +14,16 @@ class Meal(models.Model):
     ]
     meal_type = models.CharField(max_length=1, choices=MEAL_TYPE_CHOICES)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    # Kullanıcı tarihi elle girmesin; kayıt oluşturulduğu an
-    # tarih/saat otomatik olarak buraya yazılsın diye
-    # auto_now_add=True parametresi kullandık.
-    date = models.DateTimeField(auto_now_add=True)
+    # Eskiden auto_now_add=True kullanıyorduk (kayıt oluşturulduğu anki
+    # tarih/saat otomatik yazılsın, kullanıcı elle giremesin diye).
+    # Ama ML için ürettiğimiz dummy verilerde (generate_dummy_data
+    # komutunda), geçmiş günlere ait sahte Meal/ExerciseLog kayıtları
+    # oluşturmamız gerekiyor — auto_now_add=True bu durumda elle
+    # verilen tarihi YOK SAYIP her zaman "şu an"ı yazardı. Bu yüzden
+    # default=timezone.now'a geçtik: elle tarih verilirse onu kullanır,
+    # verilmezse (normal kullanıcı akışında olduğu gibi) yine "şu an"ı
+    # otomatik atar.
+    date = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         local_date = timezone.localtime(self.date)
@@ -30,7 +36,7 @@ class ExerciseLog(models.Model):
         Exercise, on_delete=models.SET_NULL, null=True, blank=True
         )
     duration_minutes = models.PositiveIntegerField()
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         local_date = timezone.localtime(self.date)
