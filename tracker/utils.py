@@ -86,4 +86,3 @@ def get_daily_breakdown(user, date):
     exercises = ExerciseLog.objects.filter(user=user, date__date=date)
 
     return {"breakfast": breakfast, "lunch": lunch, "dinner": dinner, "snack": snack, "exercises": exercises}
-
