@@ -1,6 +1,7 @@
 from django import forms
 from .models.profiles import ClientProfile, DietitianProfile
 from .models.logs import MealItem, ExerciseLog
+from .models.programs import ExerciseProgram, ExerciseProgramItem
 
 
 class ClientProfileForm(forms.ModelForm):
@@ -28,4 +29,15 @@ class ExerciseLogForm(forms.ModelForm):
     class Meta:
         model = ExerciseLog
         fields = ["exercise", "duration_minutes"]
-        
+
+
+class ExerciseProgramForm(forms.ModelForm):
+    class Meta:
+        model = ExerciseProgram
+        fields = ["name"]
+
+
+class ExerciseProgramItemForm(forms.ModelForm):
+    class Meta:
+        model = ExerciseProgramItem
+        fields = ["exercise", "duration_minutes"]

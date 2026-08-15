@@ -18,4 +18,7 @@ urlpatterns = [
     path("delete-exercise/<int:exercise_id>/", exercises.DeleteExerciseView.as_view(), name="delete_exercise"),
     path("edit-meal_item/<int:meal_item_id>/", meals.EditMealItemView.as_view(), name="edit_meal_item"),
     path("edit-exercise/<int:exercise_id>/", exercises.EditExerciseView.as_view(), name="edit_exercise"),
+    path("exercise-programs/", exercises.ExerciseProgramListView.as_view(), name="exercise_programs"),
+    path("create-exercise-program/", exercises.CreateExerciseProgramView.as_view(), name="create_exercise_program"),
+    path("exercise-program/<int:program_id>/item/", exercises.AddExerciseProgramItemView.as_view(), name= "add_exercise_program_item")
     ]

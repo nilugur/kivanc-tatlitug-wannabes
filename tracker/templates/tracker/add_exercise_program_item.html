@@ -1,0 +1,181 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #FFF7F5;
+    font-family: 'Inter', sans-serif;
+    color: #241E28;
+}
+
+.page-wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+}
+
+.page-eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #2AA876;
+    margin: 0 0 4px;
+}
+
+.page-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    letter-spacing: 0.02em;
+    margin: 0 0 24px;
+    line-height: 1;
+}
+
+.card {
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(36, 30, 40, 0.06);
+}
+
+.card-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8A7E88;
+    margin: 0 0 16px;
+}
+
+.card form p {
+    margin: 0 0 16px;
+}
+
+.card form label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #8A7E88;
+    margin-bottom: 6px;
+}
+
+.card form select,
+.card form input[type="number"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #EBDEE3;
+    background: #FFF7F5;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: #241E28;
+}
+
+.card form select:focus,
+.card form input:focus {
+    outline: none;
+    border-color: #2AA876;
+}
+
+.submit-btn {
+    width: 100%;
+    background: #2AA876;
+    color: #FFFFFF;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.submit-btn:hover {
+    background: #1f8a60;
+    transform: translateY(-2px);
+}
+
+.added-items {
+    list-style: none;
+    margin: 0 0 20px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.added-items li {
+    background: #FFF7F5;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+}
+
+.added-items .added-exercise-name {
+    display: block;
+    font-weight: 600;
+    color: #241E28;
+}
+
+.added-items .added-exercise-duration {
+    display: block;
+    font-size: 12px;
+    color: #8A7E88;
+}
+
+.log-empty {
+    font-size: 13px;
+    color: #8A7E88;
+}
+
+.done-link {
+    display: inline-block;
+    margin-top: 8px;
+    color: #241E28;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    border-bottom: 2px solid #FFC93C;
+    padding-bottom: 2px;
+}
+</style>
+
+<div class="page-wrap">
+    <p class="page-eyebrow">Building</p>
+    <h2 class="page-title">{{ program.name }}</h2>
+
+    <div class="card">
+        <p class="card-label">Exercises In This Program</p>
+        {% if items %}
+        <ul class="added-items">
+            {% for item in items %}
+            <li>
+                <span class="added-exercise-name">{% if item.exercise %}{{ item.exercise.exercise_name }}{% else %}Deleted Exercise{% endif %}</span>
+                <span class="added-exercise-duration">{{ item.duration_minutes }} min</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="log-empty">No exercises added yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <p class="card-label">Add an Exercise</p>
+        <form method="post">
+            {% csrf_token %}
+            {{ exercise_program_item_form.as_p }}
+            <button class="submit-btn" type="submit">Add to Program</button>
+        </form>
+    </div>
+
+    <a class="done-link" href="{% url 'tracker:exercise_programs' %}">Done — Back to Programs</a>
+</div>
