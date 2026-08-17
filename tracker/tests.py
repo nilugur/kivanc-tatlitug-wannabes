@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from .models.profiles import ClientProfile, DietitianProfile
 from .models.catalog import Food, Exercise
 from .models.logs import Meal, MealItem, ExerciseLog
+from .models.programs import ExerciseProgram, ExerciseProgramItem
 from .utils import (
     calculate_calories_consumed,
     calculate_calories_burned,
@@ -797,3 +798,156 @@ class GetSelectedDateTests(TestCase):
         result = get_selected_date(request)
 
         self.assertEqual(result, date.today())
+
+
+# _________________________
+# EXERCISE PROGRAM TESTLERİ
+# _________________________
+
+
+class ExerciseProgramListViewTests(TestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user(
+            username="user1", password="testpass123"
+        )
+        self.user2 = User.objects.create_user(
+            username="user2", password="testpass123"
+        )
+
+        # Hazır bir program, created_by boş
+        self.official_program = ExerciseProgram.objects.create(
+            name="Official Program", created_by=None
+        )
+
+        # user1'in kendi oluşturduğu program
+        self.user1_program = ExerciseProgram.objects.create(
+            name="User1's Program", created_by=self.user1
+        )
+
+        # user2'nin kendi oluşturduğu program
+        self.user2_program = ExerciseProgram.objects.create(
+            name="User2's Program", created_by=self.user2
+        )
+
+    def test_shows_official_and_own_programs_only(self):
+        # user1 olarak giriş yapıp listeye bakıyoruz hem hazır
+        # program hem kendi programı görünmeli ama user2'nin
+        # özel programı görünmemeli
+
+        self.client.login(username="user1", password="testpass123")
+
+        response = self.client.get("/tracker/exercise-programs/")
+
+        # sayfa başarıyla açıldı mı kontrolü
+        self.assertEqual(response.status_code, 200)
+
+        # Django'nun test aracı (self.client) bize bir kolaylık sağlıyor: render()
+        # çağrılırken template'e gönderilen ham Python verisini
+        # (yani {"programs": programs} sözlüğünü) test sırasında
+        # response.context üzerinden bize de veriyor
+        # bu sözlükten "programs" anahtarını kullanarak
+        # view'ın gerçekten hesapladığı programs queryset'ine doğrudan ulaşabiliyoruz
+        programs = response.context["programs"]
+
+        # official_program, programs içinde bulunmalı
+        self.assertIn(self.official_program, programs)
+        # user1'in kendi programı da listede olmalı
+        self.assertIn(self.user1_program, programs)
+        # user2'nin programı listede OLMAMALI
+        self.assertNotIn(self.user2_program, programs)
+
+
+class CreateExerciseProgramViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpass123"
+        )
+
+    def test_program_created_with_correct_created_by(self):
+        # bir kullanıcı program oluşturduğunda created_by alanı
+        # otomatik olarak o kullanıcıya atanmalı
+
+        self.client.login(username="testuser", password="testpass123")
+
+        response = self.client.post(
+            "/tracker/create-exercise-program/", {"name": "My New Program"}
+        )
+
+        # program gerçekten oluşmuş mu, created_by doğru mu kontrol edelim
+        new_program = ExerciseProgram.objects.get(name="My New Program")
+        self.assertEqual(new_program.created_by, self.user)
+
+    def test_redirects_to_add_item_page_after_creation(self):
+        # program oluşturulduktan sonra kullanıcı "egzersiz ekleme"
+        # sayfasına yönlendirilmeli (302), boş listeye değil
+
+        self.client.login(username="testuser", password="testpass123")
+
+        response = self.client.post(
+            "/tracker/create-exercise-program/", {"name": "Another Program"}
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+        new_program = ExerciseProgram.objects.get(name="Another Program")
+        expected_url = f"/tracker/exercise-program/{new_program.id}/item/"
+        self.assertEqual(response.url, expected_url)
+
+
+class AddExerciseProgramItemViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpass123"
+        )
+        self.program = ExerciseProgram.objects.create(
+            name="Test Program", created_by=self.user
+        )
+        self.exercise = Exercise.objects.create(
+            exercise_name="Squat", calories_per_hour=400
+        )
+
+    def test_item_added_to_correct_program(self):
+        # bir egzersiz eklendiğinde doğru programa bağlanmalı
+
+        self.client.login(username="testuser", password="testpass123")
+
+        response = self.client.post(
+            f"/tracker/exercise-program/{self.program.id}/item/",
+            {"exercise": self.exercise.id, "duration_minutes": 20},
+        )
+
+        # form geçerli mi kontorlü
+        self.assertEqual(response.status_code, 302)
+
+        # programa bağlı ExerciseProgramItemları kontrol edelim
+        items = self.program.exerciseprogramitem_set.all()
+        # Doğru sayıda kayıt oluştu mu (1 tane, ne fazla ne eksik)?
+        self.assertEqual(items.count(), 1)
+        # Doğru egzersize bağlandı mı?
+        self.assertEqual(items.first().exercise, self.exercise)
+        # Doğru süreyle kaydedildi mi?
+        self.assertEqual(items.first().duration_minutes, 20)
+
+    def test_get_page_shows_existing_items(self):
+        # sayfa açıldığında o programa daha önce eklenmiş öğeler de gösterilmeli
+
+        ExerciseProgramItem.objects.create(
+            program=self.program, exercise=self.exercise, duration_minutes=15
+        )
+
+        self.client.login(username="testuser", password="testpass123")
+
+        response = self.client.get(
+            f"/tracker/exercise-program/{self.program.id}/item/"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        # response.context["items"] view'ın get() metodunda
+        # self.items olarak template'e gönderdiği ham veriye
+        # (bu programa bağlı ExerciseProgramItem'lara) doğrudan
+        # erişmemizi sağlıyor len() ile kaç kayıt geldiğini sayıyoruz
+        # Beklentimiz: 1, çünkü testin
+        # başında elle 1 tane ExerciseProgramItem oluşturmuştuk 
+        # bu sayfanın mevcut (daha önce eklenmiş) veriyi kaybetmeden
+        # doğru şekilde gösterdiğini doğruluyor
+        self.assertEqual(len(response.context["items"]), 1)
